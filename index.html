@@ -501,32 +501,31 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
     <script>
         // ===== Supabase Config =====
+        // 硬编码 Supabase 配置，所有用户共享同一数据库
+        const SUPABASE_URL = 'https://izbneofkiorssrrlenla.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6Ym5lb2ZraW9yc3NycmxlbmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTU4NDEsImV4cCI6MjEwMzQ3MTg0MX0.cgTrA8pReT4sOzCMfqW--F9gMYpHZxeHZFybfVOMz2U';
+
         let sbClient = null;
         let cloudReady = false;
         let players = [];
         let votes = {}; // { playerId: { voterName: { operation, management, communication } } }
         let currentVoter = localStorage.getItem('current_voter') || '';
         let tempRatings = {};
+        let realtimeChannel = null;
 
         // ===== Cloud Init =====
         function initCloud() {
-            const url = localStorage.getItem('sb_url');
-            const key = localStorage.getItem('sb_key');
-
-            if (url && key) {
-                try {
-                    sbClient = supabase.createClient(url, key);
-                    cloudReady = true;
-                    updateConnStatus(true);
-                    document.getElementById('configPanel').style.display = 'none';
-                    document.getElementById('shareSection').style.display = 'block';
-                    document.getElementById('shareUrl').value = window.location.href;
-                    loadAllData();
-                } catch (e) {
-                    console.error('Supabase init error:', e);
-                    updateConnStatus(false);
-                }
-            } else {
+            try {
+                sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                cloudReady = true;
+                updateConnStatus(true);
+                document.getElementById('configPanel').style.display = 'none';
+                document.getElementById('shareSection').style.display = 'block';
+                document.getElementById('shareUrl').value = window.location.href;
+                loadAllData();
+                subscribeToChanges();
+            } catch (e) {
+                console.error('Supabase init error:', e);
                 updateConnStatus(false);
             }
         }
@@ -670,6 +669,26 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (vErr) throw vErr;
             const { error: pErr } = await sbClient.from('players').delete().neq('id', '');
             if (pErr) throw pErr;
+        }
+
+        // ===== Realtime Subscription =====
+        function subscribeToChanges() {
+            if (!sbClient) return;
+
+            // Subscribe to players table changes
+            realtimeChannel = sbClient
+                .channel('db-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
+                    console.log('Players changed:', payload);
+                    loadAllData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, (payload) => {
+                    console.log('Votes changed:', payload);
+                    loadAllData();
+                })
+                .subscribe((status) => {
+                    console.log('Realtime subscription status:', status);
+                });
         }
 
         // ===== Voter =====
