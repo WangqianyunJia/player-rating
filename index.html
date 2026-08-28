@@ -309,6 +309,61 @@
         }
         .btn-delete-sm:hover { background: rgba(255,152,0,0.2); }
 
+        /* Admin Bar */
+        .admin-bar {
+            display: flex; align-items: center; justify-content: flex-end;
+            gap: 10px; margin-bottom: 12px; font-size: 0.85em;
+        }
+        .admin-badge {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #1a1a2e; padding: 4px 12px; border-radius: 12px;
+            font-weight: 600; font-size: 0.85em;
+        }
+        .admin-login-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: #ccc; padding: 5px 14px; border-radius: 14px;
+            cursor: pointer; font-size: 0.85em; transition: all 0.3s;
+        }
+        .admin-login-btn:hover { border-color: #ffd200; color: #ffd200; }
+        .admin-logout-btn {
+            background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2);
+            color: #ff5252; padding: 4px 12px; border-radius: 12px;
+            cursor: pointer; font-size: 0.8em; transition: all 0.3s;
+        }
+        .admin-logout-btn:hover { background: rgba(255,82,82,0.2); }
+
+        /* Admin Login Modal */
+        .admin-modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 3000;
+            align-items: center; justify-content: center; backdrop-filter: blur(6px);
+        }
+        .admin-modal-overlay.show { display: flex; }
+        .admin-modal {
+            background: #1e1e3a; border: 1px solid rgba(255,210,0,0.2);
+            border-radius: 20px; padding: 36px; max-width: 380px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .admin-modal h3 {
+            color: #ffd200; font-size: 1.3em; margin-bottom: 8px; text-align: center;
+        }
+        .admin-modal .admin-desc {
+            color: #aaa; font-size: 0.9em; margin-bottom: 20px; text-align: center;
+        }
+        .admin-modal .form-group { margin-bottom: 14px; }
+        .admin-modal .form-group label { color: #ccc; }
+        .admin-modal .form-group input {
+            width: 100%; padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06); color: #fff;
+            border-radius: 10px; font-size: 0.95em; outline: none;
+        }
+        .admin-modal .form-group input:focus { border-color: #ffd200; }
+        .admin-modal-actions {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+        .admin-modal-actions .btn { flex: 1; text-align: center; }
+
         /* Loading */
         .loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -380,6 +435,11 @@
             <span class="conn-dot config" id="connDot"></span>
             <span id="connText">未连接云端</span>
             <button class="conn-btn" id="connBtn" onclick="toggleConfig()">设置</button>
+        </div>
+
+        <!-- Admin Bar -->
+        <div class="admin-bar" id="adminBar" style="display:none;">
+            <span id="adminStatus"></span>
         </div>
 
         <!-- Config Panel -->
@@ -542,6 +602,26 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal">
+        <div class="modal">
+            <h3>🔐 管理员登录</h3>
+            <p style="color:var(--text-muted); margin-bottom:16px;">请输入管理员账号和密码</p>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="adminUsername" placeholder="请输入用户名" />
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="adminPassword" placeholder="请输入密码" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeAdminLogin()">取消</button>
+                <button class="btn btn-primary" onclick="doAdminLogin()">登录</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ===== Supabase Config =====
         // 硬编码 Supabase 配置，所有用户共享同一数据库
@@ -558,6 +638,10 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         let _reloadTimer = null;
         let _skipNextRealtime = false;
 
+        // ===== Admin State =====
+        let isAdmin = false;
+        let adminUsername = '';
+
         // ===== Cloud Init =====
         function initCloud() {
             try {
@@ -567,11 +651,107 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 document.getElementById('configPanel').style.display = 'none';
                 document.getElementById('shareSection').style.display = 'block';
                 document.getElementById('shareUrl').value = window.location.href;
+                updateAdminBar();
+                updateTabVisibility();
                 loadAllData();
                 subscribeToChanges();
             } catch (e) {
                 console.error('Supabase init error:', e);
                 updateConnStatus(false);
+            }
+        }
+
+        // ===== Admin Functions =====
+        function showAdminLogin() {
+            document.getElementById('adminLoginModal').classList.add('show');
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+            setTimeout(() => document.getElementById('adminUsername').focus(), 100);
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLoginModal').classList.remove('show');
+        }
+
+        async function doAdminLogin() {
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+
+            if (!username || !password) {
+                showToast('⚠️ 请输入用户名和密码');
+                return;
+            }
+
+            if (!cloudReady) {
+                showToast('⚠️ 请先连接云端');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const { data, error } = await sbClient
+                    .from('admins')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password', password)
+                    .single();
+
+                if (error || !data) {
+                    showToast('❌ 用户名或密码错误');
+                    showLoading(false);
+                    return;
+                }
+
+                isAdmin = true;
+                adminUsername = username;
+                closeAdminLogin();
+                updateAdminBar();
+                updateTabVisibility();
+                renderAll();
+                showToast('✅ 管理员登录成功');
+            } catch (e) {
+                showToast('❌ 登录失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        function doAdminLogout() {
+            isAdmin = false;
+            adminUsername = '';
+            updateAdminBar();
+            updateTabVisibility();
+            renderAll();
+            showToast('已退出管理员模式');
+        }
+
+        function updateAdminBar() {
+            const bar = document.getElementById('adminBar');
+            const status = document.getElementById('adminStatus');
+            if (!cloudReady) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            if (isAdmin) {
+                status.innerHTML = `<span class="admin-badge">🔑 管理员: ${adminUsername}</span> <button class="admin-logout-btn" onclick="doAdminLogout()">退出</button>`;
+            } else {
+                status.innerHTML = `<button class="admin-login-btn" onclick="showAdminLogin()">🔐 管理员登录</button>`;
+            }
+        }
+
+        function updateTabVisibility() {
+            const btns = document.querySelectorAll('.tab-btn');
+            // Tabs: 0=评分投票, 1=排行榜, 2=管理选手, 3=管理投票
+            btns.forEach((btn, i) => {
+                if (i === 2 || i === 3) {
+                    // Admin-only tabs
+                    btn.style.display = isAdmin ? '' : 'none';
+                }
+            });
+            // If current tab is hidden, switch to vote tab
+            const activePanel = document.querySelector('.tab-panel.active');
+            if (activePanel && (activePanel.id === 'panel-manage' || activePanel.id === 'panel-voteManage') && !isAdmin) {
+                switchTab('vote');
             }
         }
 
@@ -806,6 +986,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         // ===== Players =====
         async function addPlayer() {
             if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!isAdmin) { showToast('⚠️ 仅管理员可添加选手'); return; }
             const name = document.getElementById('playerName').value.trim();
             const team = document.getElementById('playerTeam').value.trim();
             if (!name) { showToast('⚠️ 请输入选手名称'); return; }
@@ -829,6 +1010,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         async function deletePlayer(id) {
             if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!isAdmin) { showToast('⚠️ 仅管理员可删除选手'); return; }
             const player = players.find(p => p.id === id);
             if (!player) return;
 
@@ -947,10 +1129,11 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 const hasVoted = currentVoter && votes[player.id] && votes[player.id][currentVoter];
                 const initial = player.name.charAt(0).toUpperCase();
                 const c = colors[idx % colors.length];
+                const deleteBtn = isAdmin ? `<button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>` : '';
 
                 html += `
                 <div class="player-card">
-                    <button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>
+                    ${deleteBtn}
                     <div class="player-header">
                         <div class="player-info">
                             <div class="player-avatar" style="background:linear-gradient(135deg,${c[0]},${c[1]})">${initial}</div>
@@ -1001,9 +1184,10 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 const voteCount = getVoteCount(player.id);
                 const overall = getPlayerOverall(player.id);
                 const initial = player.name.charAt(0).toUpperCase();
+                const deleteBtn = isAdmin ? `<button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>` : '';
                 html += `
                 <div class="player-card">
-                    <button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>
+                    ${deleteBtn}
                     <div class="player-header">
                         <div class="player-info">
                             <div class="player-avatar">${initial}</div>
@@ -1095,7 +1279,12 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         // ===== Vote Management =====
         function renderVoteManage() {
             const container = document.getElementById('voteManageContent');
-            
+
+            if (!isAdmin) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">🔐</div><p>请先登录管理员账号</p></div>';
+                return;
+            }
+
             // Collect all votes grouped by voter
             const voterMap = {}; // voterName -> [{playerId, playerName, scores}]
             players.forEach(p => {
@@ -1152,6 +1341,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         async function deleteVote(playerId, voterName) {
             if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!isAdmin) { showToast('⚠️ 仅管理员可删除投票'); return; }
             if (!confirm(`确定删除「${voterName}」对选手的评分吗？`)) return;
 
             showLoading(true);
@@ -1172,6 +1362,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         async function deleteAllVotesByVoter(voterName) {
             if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!isAdmin) { showToast('⚠️ 仅管理员可删除投票'); return; }
             if (!confirm(`确定清空「${voterName}」的所有评分吗？此操作不可恢复！`)) return;
 
             showLoading(true);
