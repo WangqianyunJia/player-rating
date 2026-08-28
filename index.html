@@ -698,6 +698,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         let realtimeChannel = null;
         let _reloadTimer = null;
         let _skipNextRealtime = false;
+        let _skipNextPlayerRealtime = false;
 
         // ===== Admin State =====
         let isAdmin = false;
@@ -992,6 +993,11 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 .channel('db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
                     console.log('Players changed:', payload.eventType);
+                    // 如果是自己刚编辑的分组，跳过这次 Realtime 触发
+                    if (_skipNextPlayerRealtime) {
+                        _skipNextPlayerRealtime = false;
+                        return;
+                    }
                     // 选手变更：静默防抖刷新
                     debouncedSilentReload();
                 })
@@ -1120,6 +1126,8 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
             showLoading(true);
             try {
+                // 设置标志位，跳过 Realtime 触发的重新加载
+                _skipNextPlayerRealtime = true;
                 await cloudUpdatePlayerTeam(editingPlayerId, newTeam);
                 const player = players.find(p => p.id === editingPlayerId);
                 if (player) player.team = newTeam;
@@ -1127,6 +1135,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 renderAll();
                 showToast(`✅ 分组已更新为「${newTeam}」`);
             } catch (e) {
+                _skipNextPlayerRealtime = false;
                 showToast('❌ 更新失败: ' + e.message);
             }
             showLoading(false);
