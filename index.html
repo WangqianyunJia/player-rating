@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选手评分系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 {
+            font-size: 2.4em;
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px; letter-spacing: 2px;
+        }
+        .header p { color: #9e9e9e; font-size: 1.05em; }
+
+        /* Connection Status */
+        .conn-bar {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; margin-bottom: 20px; font-size: 0.85em;
+        }
+        .conn-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .conn-dot.online { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+        .conn-dot.offline { background: #ff5252; box-shadow: 0 0 6px #ff5252; }
+        .conn-dot.config { background: #ff9800; box-shadow: 0 0 6px #ff9800; }
+
+        .conn-btn {
+            background: none; border: 1px solid rgba(255,255,255,0.15);
+            color: #aaa; padding: 3px 10px; border-radius: 12px;
+            cursor: pointer; font-size: 0.8em; transition: all 0.3s;
+        }
+        .conn-btn:hover { border-color: #ffd200; color: #ffd200; }
+
+        /* Tabs */
+        .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
+        .tab-btn {
+            padding: 10px 28px; border: 2px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05); color: #ccc;
+            border-radius: 30px; cursor: pointer; font-size: 1em; transition: all 0.3s;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #1a1a2e; border-color: transparent; font-weight: 600;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Config Panel */
+        .config-panel {
+            background: rgba(255, 152, 0, 0.08);
+            border: 1px solid rgba(255, 152, 0, 0.25);
+            border-radius: 16px; padding: 28px; margin-bottom: 24px;
+        }
+        .config-panel h2 { color: #ff9800; font-size: 1.3em; margin-bottom: 8px; }
+        .config-panel .desc { color: #aaa; font-size: 0.9em; margin-bottom: 18px; line-height: 1.6; }
+        .config-panel .desc a { color: #ffd200; text-decoration: none; }
+        .config-panel .desc a:hover { text-decoration: underline; }
+        .config-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .config-form .form-group { flex: 1; min-width: 200px; }
+        .config-steps {
+            background: rgba(0,0,0,0.2); border-radius: 10px; padding: 16px 20px;
+            margin-bottom: 18px; font-size: 0.88em; line-height: 1.8; color: #bbb;
+        }
+        .config-steps strong { color: #ffd200; }
+        .config-steps code {
+            background: rgba(255,255,255,0.1); padding: 1px 6px;
+            border-radius: 4px; font-size: 0.9em; color: #4facfe;
+        }
+
+        /* Shared Components */
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85em; color: #aaa; }
+        .form-group input, .form-group select {
+            padding: 10px 14px; border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08); color: #fff;
+            border-radius: 10px; font-size: 0.95em; outline: none; transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #ffd200; }
+        .form-group select option { background: #2a2a4a; color: #fff; }
+
+        .btn {
+            padding: 10px 24px; border: none; border-radius: 10px;
+            font-size: 0.95em; cursor: pointer; transition: all 0.3s; font-weight: 600;
+        }
+        .btn-primary { background: linear-gradient(135deg, #f7971e, #ffd200); color: #1a1a2e; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(255,210,0,0.3); }
+        .btn-danger { background: rgba(255,82,82,0.2); color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
+        .btn-danger:hover { background: rgba(255,82,82,0.35); }
+        .btn-ghost { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.15); }
+
+        /* Add Section */
+        .add-section {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 28px; margin-bottom: 30px;
+        }
+        .add-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #ffd200; }
+        .add-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+
+        /* Player Cards */
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .player-card {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 24px; transition: all 0.3s;
+            position: relative; overflow: hidden;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .player-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 3px; background: linear-gradient(90deg, #f7971e, #ffd200);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .player-card:hover {
+            transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            border-color: rgba(255,210,0,0.2);
+        }
+        .player-card:hover::before { opacity: 1; }
+
+        .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .player-info { display: flex; align-items: center; gap: 12px; }
+        .player-avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; font-weight: 700; color: #fff;
+        }
+        .player-name { font-size: 1.2em; font-weight: 600; }
+        .player-team { font-size: 0.8em; color: #999; margin-top: 2px; }
+        .player-delete {
+            position: absolute; top: 12px; right: 12px; background: none; border: none;
+            color: #666; cursor: pointer; font-size: 1.2em; transition: color 0.3s;
+            padding: 4px 8px; border-radius: 6px;
+        }
+        .player-delete:hover { color: #ff5252; background: rgba(255,82,82,0.1); }
+
+        /* Rating */
+        .rating-section { margin-bottom: 16px; }
+        .rating-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .rating-row:last-child { border-bottom: none; }
+        .rating-label { font-size: 0.9em; color: #bbb; min-width: 60px; }
+        .rating-stars { display: flex; gap: 3px; }
+        .star {
+            width: 26px; height: 26px; cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        .star svg { width: 100%; height: 100%; }
+        .star .star-fill { fill: #444; transition: fill 0.2s; }
+        .star.active .star-fill { fill: #ffd200; }
+        .star:hover .star-fill { fill: #ffab00; }
+        .star:hover { transform: scale(1.15); }
+        .rating-value { font-size: 0.9em; color: #ffd200; font-weight: 600; min-width: 30px; text-align: right; }
+
+        /* Score Display */
+        .score-display {
+            background: rgba(255,210,0,0.08); border: 1px solid rgba(255,210,0,0.15);
+            border-radius: 12px; padding: 14px; text-align: center; margin-top: 12px;
+        }
+        .score-label { font-size: 0.8em; color: #999; margin-bottom: 4px; }
+        .score-value {
+            font-size: 2em; font-weight: 700;
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .vote-count { font-size: 0.8em; color: #888; margin-top: 4px; }
+
+        .btn-vote {
+            width: 100%; margin-top: 12px; padding: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; border: none; border-radius: 10px;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-vote:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(102,126,234,0.4); }
+        .btn-vote:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Ranking */
+        .ranking-section {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 28px; overflow-x: auto;
+        }
+        .ranking-section h2 { font-size: 1.3em; margin-bottom: 20px; color: #ffd200; }
+        .ranking-table { width: 100%; border-collapse: collapse; }
+        .ranking-table th {
+            text-align: left; padding: 12px 16px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            color: #aaa; font-size: 0.85em; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .ranking-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.95em; }
+        .ranking-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .rank-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 50%; font-weight: 700;
+        }
+        .rank-badge.gold { background: rgba(255,215,0,0.15); color: #ffd700; }
+        .rank-badge.silver { background: rgba(192,192,192,0.15); color: #c0c0c0; }
+        .rank-badge.bronze { background: rgba(205,127,50,0.15); color: #cd7f32; }
+        .rank-badge.normal { background: rgba(255,255,255,0.05); color: #999; }
+
+        .score-bar { display: flex; align-items: center; gap: 8px; }
+        .bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #f7971e, #ffd200); transition: width 0.5s ease; }
+        .bar-value { font-weight: 600; color: #ffd200; min-width: 36px; text-align: right; }
+
+        /* Voter */
+        .voter-section {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 28px; margin-bottom: 24px;
+        }
+        .voter-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #ffd200; }
+        .voter-input-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+        .voter-status { padding: 8px 16px; border-radius: 20px; font-size: 0.85em; margin-top: 12px; display: inline-block; }
+        .voter-status.voted { background: rgba(76,175,80,0.15); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+        .voter-status.not-voted { background: rgba(255,152,0,0.15); color: #ff9800; border: 1px solid rgba(255,152,0,0.3); }
+
+        /* History */
+        .history-section {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 28px; margin-top: 24px;
+        }
+        .history-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #ffd200; }
+        .history-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .history-item:last-child { border-bottom: none; }
+        .history-voter { font-weight: 600; min-width: 80px; }
+        .history-scores { display: flex; gap: 16px; font-size: 0.85em; color: #aaa; }
+        .history-score-item { display: flex; align-items: center; gap: 4px; }
+        .history-score-item .val { color: #ffd200; font-weight: 600; }
+
+        /* Empty / Toast / Modal */
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state .icon { font-size: 3em; margin-bottom: 16px; }
+        .empty-state p { font-size: 1.1em; }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(40,40,60,0.95); border: 1px solid rgba(255,210,0,0.3);
+            color: #fff; padding: 14px 28px; border-radius: 12px;
+            font-size: 0.95em; z-index: 1000; transition: transform 0.4s ease;
+            backdrop-filter: blur(10px);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 999;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #1e1e3a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 32px; max-width: 420px; width: 90%; }
+        .modal h3 { margin-bottom: 16px; color: #ffd200; }
+        .modal p { color: #aaa; margin-bottom: 20px; line-height: 1.6; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        .reset-section { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .btn-reset {
+            background: rgba(255,82,82,0.1); color: #ff5252;
+            border: 1px solid rgba(255,82,82,0.2); padding: 8px 20px;
+            border-radius: 8px; cursor: pointer; font-size: 0.85em; transition: all 0.3s;
+        }
+        .btn-reset:hover { background: rgba(255,82,82,0.2); }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15,12,41,0.8); z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px;
+        }
+        .loading-overlay.hidden { display: none; }
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(255,210,0,0.2);
+            border-top-color: #ffd200; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #aaa; font-size: 0.95em; }
+
+        /* Share Section */
+        .share-section {
+            background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.2);
+            border-radius: 16px; padding: 24px; margin-bottom: 24px; text-align: center;
+        }
+        .share-section h3 { color: #4caf50; margin-bottom: 12px; }
+        .share-url {
+            display: flex; gap: 8px; align-items: center; justify-content: center;
+            margin-top: 12px; flex-wrap: wrap;
+        }
+        .share-url input {
+            flex: 1; min-width: 250px; padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08);
+            color: #fff; border-radius: 10px; font-size: 0.9em; outline: none;
+        }
+        .btn-copy {
+            padding: 10px 20px; background: linear-gradient(135deg, #43e97b, #38f9d7);
+            color: #1a1a2e; border: none; border-radius: 10px;
+            font-weight: 600; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-copy:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(67,233,123,0.3); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.6em; }
+            .players-grid { grid-template-columns: 1fr; }
+            .add-form, .config-form { flex-direction: column; }
+            .form-group { width: 100%; }
+            .form-group input, .form-group select { width: 100%; }
+            .tabs { flex-wrap: wrap; }
+            .rating-stars { gap: 2px; }
+            .star { width: 22px; height: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏆 选手评分系统</h1>
+            <p>为选手的操作、运营、沟通能力打分，系统自动计算综合得分</p>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="conn-bar" id="connBar">
+            <span class="conn-dot config" id="connDot"></span>
+            <span id="connText">未连接云端</span>
+            <button class="conn-btn" id="connBtn" onclick="toggleConfig()">设置</button>
+        </div>
+
+        <!-- Config Panel -->
+        <div class="config-panel" id="configPanel">
+            <h2>🔗 Supabase 云数据库配置</h2>
+            <div class="desc">
+                本系统使用 <a href="https://supabase.com" target="_blank">Supabase</a> 作为云端数据库，多人共享同一份数据。
+            </div>
+            <div class="config-steps">
+                <strong>📖 配置步骤：</strong><br>
+                1. 打开 👉 <a href="https://supabase.com" target="_blank">supabase.com</a> → 点击「Start your project」<br>
+                2. 用 <strong>GitHub 账号登录</strong>（你已经有 GitHub 了！）<br>
+                3. 点击「New Project」→ 填写项目名（如「评分系统」）→ 设置数据库密码 → 选区域（推荐 Northeast Asia）→ 创建<br>
+                4. 等待 1-2 分钟项目初始化完成<br>
+                5. 左侧菜单点击「SQL Editor」→ 点击「New Query」→ 粘贴下面的 SQL 并点击「Run」：<br>
+                <code style="display:block; margin-top:8px; white-space:pre; line-height:1.6;">
+CREATE TABLE players (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  team TEXT DEFAULT '未分组',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE votes (
+  id BIGSERIAL PRIMARY KEY,
+  player_id TEXT NOT NULL,
+  voter_name TEXT NOT NULL,
+  operation INT DEFAULT 0,
+  management INT DEFAULT 0,
+  communication INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(player_id, voter_name)
+);
+
+-- 开启匿名访问权限
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "允许所有人读取选手" ON players FOR SELECT USING (true);
+CREATE POLICY "允许所有人创建选手" ON players FOR INSERT WITH CHECK (true);
+CREATE POLICY "允许所有人删除选手" ON players FOR DELETE USING (true);
+
+CREATE POLICY "允许所有人读取投票" ON votes FOR SELECT USING (true);
+CREATE POLICY "允许所有人创建投票" ON votes FOR INSERT WITH CHECK (true);
+CREATE POLICY "允许所有人更新投票" ON votes FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
+                </code>
+                <br>
+                6. 左侧菜单点击「Settings」→「API」→ 复制 <code>Project URL</code> 和 <code>anon public key</code> 填入下方
+            </div>
+            <div class="config-form">
+                <div class="form-group">
+                    <label>Project URL</label>
+                    <input type="text" id="cfgUrl" placeholder="粘贴你的 Project URL" />
+                </div>
+                <div class="form-group">
+                    <label>Anon Key</label>
+                    <input type="text" id="cfgKey" placeholder="粘贴你的 anon public key" />
+                </div>
+                <button class="btn btn-primary" onclick="saveConfig()">连接云端</button>
+            </div>
+        </div>
+
+        <!-- Share Section (shown when connected) -->
+        <div class="share-section" id="shareSection" style="display:none;">
+            <h3>📤 分享链接给微信好友</h3>
+            <p style="color:#aaa; font-size:0.9em;">复制下方链接，发送到微信群或好友，打开即可投票</p>
+            <div class="share-url">
+                <input type="text" id="shareUrl" readonly />
+                <button class="btn-copy" onclick="copyShareUrl()">📋 复制链接</button>
+            </div>
+        </div>
+
+        <!-- Voter Identity -->
+        <div class="voter-section">
+            <h2>👤 投票人身份</h2>
+            <div class="voter-input-row">
+                <div class="form-group" style="flex:1; min-width: 200px;">
+                    <label>请输入您的姓名</label>
+                    <input type="text" id="voterName" placeholder="输入姓名后开始评分..." />
+                </div>
+                <button class="btn btn-primary" onclick="confirmVoter()">确认身份</button>
+            </div>
+            <div id="voterStatus"></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('vote')">📝 评分投票</button>
+            <button class="tab-btn" onclick="switchTab('ranking')">📊 排行榜</button>
+            <button class="tab-btn" onclick="switchTab('manage')">⚙️ 管理选手</button>
+        </div>
+
+        <!-- Tab: Vote -->
+        <div class="tab-panel active" id="panel-vote">
+            <div id="playersVoteList" class="players-grid"></div>
+            <div id="emptyVote" class="empty-state" style="display:none;">
+                <div class="icon">🎮</div>
+                <p>暂无选手，请先在「管理选手」中添加</p>
+            </div>
+        </div>
+
+        <!-- Tab: Ranking -->
+        <div class="tab-panel" id="panel-ranking">
+            <div class="ranking-section">
+                <h2>📊 综合排名</h2>
+                <div id="rankingContent"></div>
+            </div>
+        </div>
+
+        <!-- Tab: Manage -->
+        <div class="tab-panel" id="panel-manage">
+            <div class="add-section">
+                <h2>➕ 添加选手</h2>
+                <div class="add-form">
+                    <div class="form-group" style="flex:1; min-width:150px;">
+                        <label>选手名称</label>
+                        <input type="text" id="playerName" placeholder="输入选手名称" />
+                    </div>
+                    <div class="form-group" style="min-width:120px;">
+                        <label>战队/分组</label>
+                        <input type="text" id="playerTeam" placeholder="可选" />
+                    </div>
+                    <button class="btn btn-primary" onclick="addPlayer()">添加选手</button>
+                </div>
+            </div>
+            <div id="playersManageList" class="players-grid"></div>
+            <div id="emptyManage" class="empty-state" style="display:none;">
+                <div class="icon">📋</div>
+                <p>还没有选手，快来添加吧！</p>
+            </div>
+            <div class="reset-section">
+                <button class="btn-reset" onclick="showResetModal()">🗑️ 重置所有数据</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Reset Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal">
+            <h3>⚠️ 确认重置</h3>
+            <p>此操作将清除所有选手和评分数据，且不可恢复。确定要继续吗？</p>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeResetModal()">取消</button>
+                <button class="btn btn-danger" onclick="resetAll()">确认重置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Supabase Config =====
+        let sbClient = null;
+        let cloudReady = false;
+        let players = [];
+        let votes = {}; // { playerId: { voterName: { operation, management, communication } } }
+        let currentVoter = localStorage.getItem('current_voter') || '';
+        let tempRatings = {};
+
+        // ===== Cloud Init =====
+        function initCloud() {
+            const url = localStorage.getItem('sb_url');
+            const key = localStorage.getItem('sb_key');
+
+            if (url && key) {
+                try {
+                    sbClient = supabase.createClient(url, key);
+                    cloudReady = true;
+                    updateConnStatus(true);
+                    document.getElementById('configPanel').style.display = 'none';
+                    document.getElementById('shareSection').style.display = 'block';
+                    document.getElementById('shareUrl').value = window.location.href;
+                    loadAllData();
+                } catch (e) {
+                    console.error('Supabase init error:', e);
+                    updateConnStatus(false);
+                }
+            } else {
+                updateConnStatus(false);
+            }
+        }
+
+        async function saveConfig() {
+            const url = document.getElementById('cfgUrl').value.trim();
+            const key = document.getElementById('cfgKey').value.trim();
+
+            if (!url || !key) {
+                showToast('⚠️ 请填写 Project URL 和 Anon Key');
+                return;
+            }
+
+            localStorage.setItem('sb_url', url);
+            localStorage.setItem('sb_key', key);
+
+            showLoading(true);
+            try {
+                sbClient = supabase.createClient(url, key);
+                // Test connection
+                const { error } = await sbClient.from('players').select('*').limit(1);
+                if (error) throw error;
+
+                cloudReady = true;
+                updateConnStatus(true);
+                document.getElementById('configPanel').style.display = 'none';
+                document.getElementById('shareSection').style.display = 'block';
+                document.getElementById('shareUrl').value = window.location.href;
+                loadAllData();
+                showToast('✅ 云端连接成功！');
+            } catch (e) {
+                showToast('❌ 连接失败: ' + e.message);
+                updateConnStatus(false);
+                localStorage.removeItem('sb_url');
+                localStorage.removeItem('sb_key');
+            }
+            showLoading(false);
+        }
+
+        function toggleConfig() {
+            const panel = document.getElementById('configPanel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                document.getElementById('cfgUrl').value = localStorage.getItem('sb_url') || '';
+                document.getElementById('cfgKey').value = localStorage.getItem('sb_key') || '';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function updateConnStatus(online) {
+            const dot = document.getElementById('connDot');
+            const text = document.getElementById('connText');
+            const btn = document.getElementById('connBtn');
+            if (online) {
+                dot.className = 'conn-dot online';
+                text.textContent = '云端已连接 · 数据实时同步';
+                btn.textContent = '修改配置';
+            } else {
+                dot.className = 'conn-dot offline';
+                text.textContent = '未连接云端 · 请先配置';
+                btn.textContent = '去配置';
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+        }
+
+        // ===== Cloud Data Operations =====
+        async function loadAllData() {
+            if (!cloudReady) return;
+            showLoading(true);
+            try {
+                // Load players
+                const { data: playerData, error: pErr } = await sbClient
+                    .from('players')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+                if (pErr) throw pErr;
+                players = (playerData || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    team: p.team || '未分组',
+                    createdAt: p.created_at
+                }));
+
+                // Load votes
+                const { data: voteData, error: vErr } = await sbClient
+                    .from('votes')
+                    .select('*');
+                if (vErr) throw vErr;
+                votes = {};
+                (voteData || []).forEach(v => {
+                    const pid = v.player_id;
+                    const voter = v.voter_name;
+                    if (!votes[pid]) votes[pid] = {};
+                    votes[pid][voter] = {
+                        operation: v.operation || 0,
+                        management: v.management || 0,
+                        communication: v.communication || 0
+                    };
+                });
+
+                renderAll();
+            } catch (e) {
+                console.error('Load data error:', e);
+                showToast('❌ 加载数据失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        async function cloudAddPlayer(id, name, team) {
+            const { error } = await sbClient.from('players').insert({ id, name, team });
+            if (error) throw error;
+        }
+
+        async function cloudDeletePlayer(playerId) {
+            // Delete votes first
+            const { error: vErr } = await sbClient.from('votes').delete().eq('player_id', playerId);
+            if (vErr) throw vErr;
+            // Delete player
+            const { error: pErr } = await sbClient.from('players').delete().eq('id', playerId);
+            if (pErr) throw pErr;
+        }
+
+        async function cloudSaveVote(playerId, voterName, scores) {
+            // Use upsert - this will insert or update if exists
+            const { error } = await sbClient.from('votes').upsert({
+                player_id: playerId,
+                voter_name: voterName,
+                operation: scores.operation,
+                management: scores.management,
+                communication: scores.communication
+            }, { onConflict: 'player_id,voter_name' });
+            if (error) throw error;
+        }
+
+        async function cloudResetAll() {
+            const { error: vErr } = await sbClient.from('votes').delete().neq('id', 0);
+            if (vErr) throw vErr;
+            const { error: pErr } = await sbClient.from('players').delete().neq('id', '');
+            if (pErr) throw pErr;
+        }
+
+        // ===== Voter =====
+        function confirmVoter() {
+            const name = document.getElementById('voterName').value.trim();
+            if (!name) { showToast('⚠️ 请输入您的姓名'); return; }
+            currentVoter = name;
+            localStorage.setItem('current_voter', name);
+            updateVoterStatus();
+            renderAll();
+            showToast(`✅ 欢迎，${name}！`);
+        }
+
+        function updateVoterStatus() {
+            const el = document.getElementById('voterStatus');
+            if (!currentVoter) { el.innerHTML = ''; return; }
+            let votedCount = 0;
+            players.forEach(p => {
+                if (votes[p.id] && votes[p.id][currentVoter]) votedCount++;
+            });
+            const total = players.length;
+            if (total === 0) {
+                el.innerHTML = `<span class="voter-status not-voted">暂无选手可评分</span>`;
+            } else if (votedCount === total) {
+                el.innerHTML = `<span class="voter-status voted">✅ 已完成全部 ${total} 位选手的评分</span>`;
+            } else {
+                el.innerHTML = `<span class="voter-status not-voted">📝 已评 ${votedCount}/${total} 位选手</span>`;
+            }
+        }
+
+        // ===== Tabs =====
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', ['vote', 'ranking', 'manage'][i] === tab);
+            });
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + tab).classList.add('active');
+            if (tab === 'ranking') renderRanking();
+        }
+
+        // ===== Players =====
+        async function addPlayer() {
+            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            const name = document.getElementById('playerName').value.trim();
+            const team = document.getElementById('playerTeam').value.trim();
+            if (!name) { showToast('⚠️ 请输入选手名称'); return; }
+
+            const id = 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+            showLoading(true);
+            try {
+                await cloudAddPlayer(id, name, team || '未分组');
+                players.push({ id, name, team: team || '未分组', createdAt: new Date() });
+                votes[id] = {};
+                document.getElementById('playerName').value = '';
+                document.getElementById('playerTeam').value = '';
+                renderAll();
+                showToast(`✅ 选手「${name}」已添加`);
+            } catch (e) {
+                showToast('❌ 添加失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        async function deletePlayer(id) {
+            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            const player = players.find(p => p.id === id);
+            if (!player) return;
+
+            showLoading(true);
+            try {
+                await cloudDeletePlayer(id);
+                players = players.filter(p => p.id !== id);
+                delete votes[id];
+                renderAll();
+                showToast(`🗑️ 选手「${player.name}」已删除`);
+            } catch (e) {
+                showToast('❌ 删除失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        // ===== Rating =====
+        function getPlayerAvg(playerId, field) {
+            const v = votes[playerId] || {};
+            const vals = Object.values(v).map(x => x[field]).filter(x => x > 0);
+            return vals.length === 0 ? 0 : vals.reduce((a, b) => a + b, 0) / vals.length;
+        }
+
+        function getPlayerOverall(playerId) {
+            const op = getPlayerAvg(playerId, 'operation');
+            const mg = getPlayerAvg(playerId, 'management');
+            const cm = getPlayerAvg(playerId, 'communication');
+            if (op === 0 && mg === 0 && cm === 0) return 0;
+            return (op + mg + cm) / 3;
+        }
+
+        function getVoteCount(playerId) {
+            const v = votes[playerId] || {};
+            return Object.keys(v).filter(k => {
+                const x = v[k];
+                return x.operation > 0 || x.management > 0 || x.communication > 0;
+            }).length;
+        }
+
+        function getTempRating(playerId, field) {
+            if (!tempRatings[playerId]) {
+                if (currentVoter && votes[playerId] && votes[playerId][currentVoter]) {
+                    tempRatings[playerId] = { ...votes[playerId][currentVoter] };
+                } else {
+                    tempRatings[playerId] = { operation: 0, management: 0, communication: 0 };
+                }
+            }
+            return tempRatings[playerId][field] || 0;
+        }
+
+        function setTempRating(playerId, field, value) {
+            if (!tempRatings[playerId]) tempRatings[playerId] = { operation: 0, management: 0, communication: 0 };
+            tempRatings[playerId][field] = value;
+            renderVoteTab();
+        }
+
+        async function submitVote(playerId) {
+            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!currentVoter) { showToast('⚠️ 请先确认投票人身份'); return; }
+
+            const ratings = tempRatings[playerId] || { operation: 0, management: 0, communication: 0 };
+            if (ratings.operation === 0 && ratings.management === 0 && ratings.communication === 0) {
+                showToast('⚠️ 请至少评一项分数'); return;
+            }
+
+            showLoading(true);
+            try {
+                await cloudSaveVote(playerId, currentVoter, ratings);
+                if (!votes[playerId]) votes[playerId] = {};
+                votes[playerId][currentVoter] = { ...ratings };
+                delete tempRatings[playerId];
+                renderAll();
+                showToast('✅ 评分已提交！');
+            } catch (e) {
+                showToast('❌ 提交失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        // ===== Render =====
+        function renderAll() {
+            renderVoteTab();
+            renderManageTab();
+            renderRanking();
+            updateVoterStatus();
+        }
+
+        function createStars(playerId, field) {
+            const val = getTempRating(playerId, field);
+            let html = '<div class="rating-stars">';
+            for (let i = 1; i <= 10; i++) {
+                const active = i <= val ? 'active' : '';
+                html += `<div class="star ${active}" onclick="setTempRating('${playerId}','${field}',${i})" title="${i}分">
+                    <svg viewBox="0 0 24 24"><polygon class="star-fill" points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                </div>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function renderVoteTab() {
+            const container = document.getElementById('playersVoteList');
+            const empty = document.getElementById('emptyVote');
+            if (players.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+
+            const colors = [['#667eea','#764ba2'],['#f093fb','#f5576c'],['#4facfe','#00f2fe'],['#43e97b','#38f9d7'],['#fa709a','#fee140'],['#a18cd1','#fbc2eb']];
+            let html = '';
+
+            players.forEach((player, idx) => {
+                const overall = getPlayerOverall(player.id);
+                const voteCount = getVoteCount(player.id);
+                const hasVoted = currentVoter && votes[player.id] && votes[player.id][currentVoter];
+                const initial = player.name.charAt(0).toUpperCase();
+                const c = colors[idx % colors.length];
+
+                html += `
+                <div class="player-card">
+                    <button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>
+                    <div class="player-header">
+                        <div class="player-info">
+                            <div class="player-avatar" style="background:linear-gradient(135deg,${c[0]},${c[1]})">${initial}</div>
+                            <div>
+                                <div class="player-name">${esc(player.name)}</div>
+                                <div class="player-team">${esc(player.team)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rating-section">
+                        <div class="rating-row">
+                            <span class="rating-label">🎮 操作</span>
+                            ${createStars(player.id, 'operation')}
+                            <span class="rating-value">${getTempRating(player.id, 'operation') || '-'}</span>
+                        </div>
+                        <div class="rating-row">
+                            <span class="rating-label">📈 运营</span>
+                            ${createStars(player.id, 'management')}
+                            <span class="rating-value">${getTempRating(player.id, 'management') || '-'}</span>
+                        </div>
+                        <div class="rating-row">
+                            <span class="rating-label">💬 沟通</span>
+                            ${createStars(player.id, 'communication')}
+                            <span class="rating-value">${getTempRating(player.id, 'communication') || '-'}</span>
+                        </div>
+                    </div>
+                    <div class="score-display">
+                        <div class="score-label">综合得分（平均）</div>
+                        <div class="score-value">${overall > 0 ? overall.toFixed(1) : '-'}</div>
+                        <div class="vote-count">${voteCount} 人已评分${hasVoted ? ' · ✅ 你已评分' : ''}</div>
+                    </div>
+                    <button class="btn-vote" onclick="submitVote('${player.id}')">
+                        ${hasVoted ? '🔄 更新评分' : '📩 提交评分'}
+                    </button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderManageTab() {
+            const container = document.getElementById('playersManageList');
+            const empty = document.getElementById('emptyManage');
+            if (players.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+
+            let html = '';
+            players.forEach((player, idx) => {
+                const voteCount = getVoteCount(player.id);
+                const overall = getPlayerOverall(player.id);
+                const initial = player.name.charAt(0).toUpperCase();
+                html += `
+                <div class="player-card">
+                    <button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>
+                    <div class="player-header">
+                        <div class="player-info">
+                            <div class="player-avatar">${initial}</div>
+                            <div>
+                                <div class="player-name">${esc(player.name)}</div>
+                                <div class="player-team">${esc(player.team)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+                        <span style="color:#aaa;font-size:0.9em;">评分人数</span>
+                        <span style="color:#ffd200;font-weight:600;">${voteCount} 人</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+                        <span style="color:#aaa;font-size:0.9em;">综合得分</span>
+                        <span style="color:#ffd200;font-weight:600;">${overall > 0 ? overall.toFixed(1) : '-'}</span>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderRanking() {
+            const container = document.getElementById('rankingContent');
+            if (players.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>暂无选手数据</p></div>';
+                return;
+            }
+
+            const sorted = [...players].map(p => ({
+                ...p,
+                overall: getPlayerOverall(p.id),
+                opAvg: getPlayerAvg(p.id, 'operation'),
+                mgAvg: getPlayerAvg(p.id, 'management'),
+                cmAvg: getPlayerAvg(p.id, 'communication'),
+                voteCount: getVoteCount(p.id)
+            })).sort((a, b) => b.overall - a.overall);
+
+            let html = `<table class="ranking-table">
+                <thead><tr>
+                    <th>排名</th><th>选手</th><th>操作</th><th>运营</th><th>沟通</th><th>综合得分</th><th>评分人数</th>
+                </tr></thead><tbody>`;
+
+            sorted.forEach((p, i) => {
+                const rank = i + 1;
+                let bc = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'normal';
+                html += `<tr>
+                    <td><span class="rank-badge ${bc}">${rank}</span></td>
+                    <td><div style="font-weight:600;">${esc(p.name)}</div><div style="font-size:0.8em;color:#888;">${esc(p.team)}</div></td>
+                    <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.opAvg/10*100}%"></div></div><span class="bar-value">${p.opAvg>0?p.opAvg.toFixed(1):'-'}</span></div></td>
+                    <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.mgAvg/10*100}%"></div></div><span class="bar-value">${p.mgAvg>0?p.mgAvg.toFixed(1):'-'}</span></div></td>
+                    <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.cmAvg/10*100}%"></div></div><span class="bar-value">${p.cmAvg>0?p.cmAvg.toFixed(1):'-'}</span></div></td>
+                    <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.overall/10*100}%"></div></div><span class="bar-value" style="font-size:1.1em;">${p.overall>0?p.overall.toFixed(1):'-'}</span></div></td>
+                    <td style="text-align:center;">${p.voteCount}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+
+            // Vote details
+            html += '<div class="history-section"><h2>📋 评分详情</h2>';
+            let hasDetails = false;
+            sorted.forEach(p => {
+                const v = votes[p.id] || {};
+                const voters = Object.entries(v);
+                if (voters.length > 0) {
+                    hasDetails = true;
+                    html += `<div style="margin-bottom:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;color:#ffd200;">${esc(p.name)}</div>`;
+                    voters.forEach(([voter, scores]) => {
+                        const total = ((scores.operation||0) + (scores.management||0) + (scores.communication||0)) / 3;
+                        html += `<div class="history-item">
+                            <span class="history-voter">${esc(voter)}</span>
+                            <div class="history-scores">
+                                <span class="history-score-item">操作 <span class="val">${scores.operation||'-'}</span></span>
+                                <span class="history-score-item">运营 <span class="val">${scores.management||'-'}</span></span>
+                                <span class="history-score-item">沟通 <span class="val">${scores.communication||'-'}</span></span>
+                                <span class="history-score-item">综合 <span class="val">${total>0?total.toFixed(1):'-'}</span></span>
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+            });
+            if (!hasDetails) html += '<div class="empty-state" style="padding:20px;"><p>暂无评分记录</p></div>';
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ===== Utils =====
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function copyShareUrl() {
+            const input = document.getElementById('shareUrl');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('✅ 链接已复制，发给微信好友吧！');
+            }).catch(() => {
+                document.execCommand('copy');
+                showToast('✅ 链接已复制！');
+            });
+        }
+
+        function showResetModal() { document.getElementById('resetModal').classList.add('show'); }
+        function closeResetModal() { document.getElementById('resetModal').classList.remove('show'); }
+
+        async function resetAll() {
+            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); closeResetModal(); return; }
+            showLoading(true);
+            try {
+                await cloudResetAll();
+                players = [];
+                votes = {};
+                tempRatings = {};
+                closeResetModal();
+                renderAll();
+                showToast('🗑️ 所有数据已重置');
+            } catch (e) {
+                showToast('❌ 重置失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (e.target.id === 'voterName') confirmVoter();
+                if (e.target.id === 'playerName' || e.target.id === 'playerTeam') addPlayer();
+            }
+        });
+
+        // Auto-refresh every 30 seconds to sync with other voters
+        setInterval(() => {
+            if (cloudReady) loadAllData();
+        }, 30000);
+
+        // Init
+        initCloud();
+    </script>
+</body>
+</html>
