@@ -314,6 +314,70 @@
             border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
         }
         .btn-edit-sm:hover { background: rgba(79,172,254,0.2); }
+        .btn-honor-sm {
+            background: rgba(255,215,0,0.1); color: #ffd700;
+            border: 1px solid rgba(255,215,0,0.2); padding: 4px 10px;
+            border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
+        }
+        .btn-honor-sm:hover { background: rgba(255,215,0,0.2); }
+
+        /* Honor Badges in Ranking */
+        .honor-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .honor-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 8px; border-radius: 10px; font-size: 0.75em;
+            font-weight: 600; white-space: nowrap;
+        }
+        .honor-badge.gold { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.25); }
+        .honor-badge.silver { background: rgba(192,192,192,0.12); color: #d0d0d0; border: 1px solid rgba(192,192,192,0.2); }
+        .honor-badge.bronze { background: rgba(205,127,50,0.12); color: #cd7f32; border: 1px solid rgba(205,127,50,0.2); }
+        .honor-badge.default { background: rgba(79,172,254,0.1); color: #4facfe; border: 1px solid rgba(79,172,254,0.2); }
+
+        /* Edit Honors Modal */
+        .edit-honor-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 3000;
+            align-items: center; justify-content: center; backdrop-filter: blur(6px);
+        }
+        .edit-honor-overlay.show { display: flex; }
+        .edit-honor-modal {
+            background: #1e1e3a; border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 20px; padding: 36px; max-width: 480px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto;
+        }
+        .edit-honor-modal h3 {
+            color: #ffd700; font-size: 1.3em; margin-bottom: 8px; text-align: center;
+        }
+        .edit-honor-modal .edit-honor-desc {
+            color: #aaa; font-size: 0.9em; margin-bottom: 20px; text-align: center;
+        }
+        .honor-add-row {
+            display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .honor-add-row .form-group { flex: 1; min-width: 120px; }
+        .honor-add-row .form-group label { color: #ccc; }
+        .honor-add-row .form-group input,
+        .honor-add-row .form-group select {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06); color: #fff;
+            border-radius: 10px; font-size: 0.9em; outline: none;
+        }
+        .honor-add-row .form-group input:focus,
+        .honor-add-row .form-group select:focus { border-color: #ffd700; }
+        .honor-add-row .form-group select option { background: #2a2a4a; color: #fff; }
+        .honor-list-edit { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .honor-list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; background: rgba(255,255,255,0.04); border-radius: 10px;
+        }
+        .honor-list-item-info { display: flex; align-items: center; gap: 8px; }
+        .honor-list-item-name { font-weight: 600; color: #fff; }
+        .honor-list-item-rank { font-size: 0.85em; }
+        .edit-honor-modal-actions {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+        .edit-honor-modal-actions .btn { flex: 1; text-align: center; }
 
         /* Edit Team Modal */
         .edit-team-overlay {
@@ -503,6 +567,7 @@ CREATE TABLE players (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   team TEXT DEFAULT '未分组',
+  honors TEXT DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -679,6 +744,47 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             <div class="edit-team-modal-actions">
                 <button class="btn btn-ghost" onclick="closeEditTeamModal()">取消</button>
                 <button class="btn btn-primary" onclick="saveEditTeam()" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Honors Modal -->
+    <div class="edit-honor-overlay" id="editHonorModal">
+        <div class="edit-honor-modal">
+            <h3>🏆 编辑荣誉</h3>
+            <p class="edit-honor-desc">为选手 <strong id="editHonorPlayerName" style="color:#ffd700;"></strong> 添加或管理荣誉</p>
+            
+            <div class="honor-add-row">
+                <div class="form-group">
+                    <label>比赛名称</label>
+                    <input type="text" id="honorCompInput" placeholder="如：2024春季联赛" />
+                </div>
+                <div class="form-group" style="min-width:100px; flex:0.5;">
+                    <label>名次</label>
+                    <select id="honorRankSelect">
+                        <option value="🥇 冠军">🥇 冠军</option>
+                        <option value="🥈 亚军">🥈 亚军</option>
+                        <option value="🥉 季军">🥉 季军</option>
+                        <option value="4">第4名</option>
+                        <option value="5">第5名</option>
+                        <option value="6">第6名</option>
+                        <option value="7">第7名</option>
+                        <option value="8">第8名</option>
+                        <option value="top10">Top 10</option>
+                        <option value="参赛">参赛</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="addHonorToList()" style="padding:10px 16px; white-space:nowrap;">➕ 添加</button>
+            </div>
+
+            <div style="color:#aaa; font-size:0.85em; margin-bottom:8px;">已有荣誉：</div>
+            <div class="honor-list-edit" id="honorListEdit">
+                <div style="color:#666; text-align:center; padding:12px;">暂无荣誉</div>
+            </div>
+
+            <div class="edit-honor-modal-actions">
+                <button class="btn btn-ghost" onclick="closeEditHonorModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveEditHonor()" style="background:linear-gradient(135deg,#ffd700,#ffab00);">💾 保存</button>
             </div>
         </div>
     </div>
@@ -893,12 +999,21 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                     .select('*')
                     .order('created_at', { ascending: true });
                 if (pErr) throw pErr;
-                players = (playerData || []).map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    team: p.team || '未分组',
-                    createdAt: p.created_at
-                }));
+                players = (playerData || []).map(p => {
+                    let honors = [];
+                    if (p.honors) {
+                        try {
+                            honors = typeof p.honors === 'string' ? JSON.parse(p.honors) : p.honors;
+                        } catch(e) { honors = []; }
+                    }
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        team: p.team || '未分组',
+                        honors: honors,
+                        createdAt: p.created_at
+                    };
+                });
 
                 // Load votes
                 const { data: voteData, error: vErr } = await sbClient
@@ -950,6 +1065,11 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         async function cloudUpdatePlayerTeam(playerId, newTeam) {
             const { error } = await sbClient.from('players').update({ team: newTeam }).eq('id', playerId);
+            if (error) throw error;
+        }
+
+        async function cloudUpdatePlayerHonors(playerId, honors) {
+            const { error } = await sbClient.from('players').update({ honors: JSON.stringify(honors) }).eq('id', playerId);
             if (error) throw error;
         }
 
@@ -1068,7 +1188,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             showLoading(true);
             try {
                 await cloudAddPlayer(id, name, team || '未分组');
-                players.push({ id, name, team: team || '未分组', createdAt: new Date() });
+                players.push({ id, name, team: team || '未分组', honors: [], createdAt: new Date() });
                 votes[id] = {};
                 document.getElementById('playerName').value = '';
                 document.getElementById('playerTeam').value = '';
@@ -1139,6 +1259,109 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 showToast('❌ 更新失败: ' + e.message);
             }
             showLoading(false);
+        }
+
+        // ===== Edit Honors =====
+        let editingHonorPlayerId = null;
+        let tempHonors = []; // temporary honors list while editing
+
+        function showEditHonorModal(playerId) {
+            if (!isAdmin) { showToast('⚠️ 仅管理员可编辑荣誉'); return; }
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            editingHonorPlayerId = playerId;
+            tempHonors = [...(player.honors || [])];
+            document.getElementById('editHonorPlayerName').textContent = player.name;
+            document.getElementById('honorCompInput').value = '';
+            document.getElementById('honorRankSelect').value = '🥇 冠军';
+            renderHonorListEdit();
+            document.getElementById('editHonorModal').classList.add('show');
+            setTimeout(() => document.getElementById('honorCompInput').focus(), 100);
+        }
+
+        function closeEditHonorModal() {
+            document.getElementById('editHonorModal').classList.remove('show');
+            editingHonorPlayerId = null;
+            tempHonors = [];
+        }
+
+        function addHonorToList() {
+            const comp = document.getElementById('honorCompInput').value.trim();
+            const rank = document.getElementById('honorRankSelect').value;
+            if (!comp) { showToast('⚠️ 请输入比赛名称'); return; }
+            tempHonors.push({ comp: comp, rank: rank });
+            document.getElementById('honorCompInput').value = '';
+            renderHonorListEdit();
+            showToast(`✅ 已添加「${comp}」`);
+        }
+
+        function removeHonorFromList(index) {
+            tempHonors.splice(index, 1);
+            renderHonorListEdit();
+        }
+
+        function renderHonorListEdit() {
+            const container = document.getElementById('honorListEdit');
+            if (tempHonors.length === 0) {
+                container.innerHTML = '<div style="color:#666; text-align:center; padding:12px;">暂无荣誉</div>';
+                return;
+            }
+            let html = '';
+            tempHonors.forEach((h, i) => {
+                const rankClass = getHonorRankClass(h.rank);
+                html += `<div class="honor-list-item">
+                    <div class="honor-list-item-info">
+                        <span class="honor-list-item-name">${esc(h.comp)}</span>
+                        <span class="honor-list-item-rank ${rankClass}">${esc(h.rank)}</span>
+                    </div>
+                    <button class="btn-delete-sm" onclick="removeHonorFromList(${i})">删除</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function getHonorRankClass(rank) {
+            if (rank.includes('冠军') || rank.includes('🥇')) return 'gold';
+            if (rank.includes('亚军') || rank.includes('🥈')) return 'silver';
+            if (rank.includes('季军') || rank.includes('🥉')) return 'bronze';
+            return 'default';
+        }
+
+        function getHonorBadgeClass(rank) {
+            if (rank.includes('冠军') || rank.includes('🥇')) return 'gold';
+            if (rank.includes('亚军') || rank.includes('🥈')) return 'silver';
+            if (rank.includes('季军') || rank.includes('🥉')) return 'bronze';
+            return 'default';
+        }
+
+        async function saveEditHonor() {
+            if (!editingHonorPlayerId) return;
+
+            showLoading(true);
+            try {
+                _skipNextPlayerRealtime = true;
+                await cloudUpdatePlayerHonors(editingHonorPlayerId, tempHonors);
+                const player = players.find(p => p.id === editingHonorPlayerId);
+                if (player) player.honors = [...tempHonors];
+                closeEditHonorModal();
+                renderAll();
+                showToast('✅ 荣誉已更新');
+            } catch (e) {
+                _skipNextPlayerRealtime = false;
+                showToast('❌ 更新失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        function renderHonorBadges(honors) {
+            if (!honors || honors.length === 0) return '';
+            let html = '<div class="honor-badges">';
+            honors.forEach(h => {
+                const bc = getHonorBadgeClass(h.rank);
+                html += `<span class="honor-badge ${bc}">${esc(h.rank)} ${esc(h.comp)}</span>`;
+            });
+            html += '</div>';
+            return html;
         }
 
         // ===== Rating =====
@@ -1300,6 +1523,8 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 const initial = player.name.charAt(0).toUpperCase();
                 const deleteBtn = isAdmin ? `<button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>` : '';
                 const editTeamBtn = isAdmin ? `<button class="btn-edit-sm" onclick="showEditTeamModal('${player.id}')">🏷️ 编辑分组</button>` : '';
+                const editHonorBtn = isAdmin ? `<button class="btn-honor-sm" onclick="showEditHonorModal('${player.id}')">🏆 编辑荣誉</button>` : '';
+                const honorDisplay = (player.honors && player.honors.length > 0) ? renderHonorBadges(player.honors) : '';
                 html += `
                 <div class="player-card">
                     ${deleteBtn}
@@ -1309,6 +1534,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                             <div>
                                 <div class="player-name">${esc(player.name)}</div>
                                 <div class="player-team">${esc(player.team)}</div>
+                                ${honorDisplay}
                             </div>
                         </div>
                     </div>
@@ -1320,7 +1546,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                         <span style="color:#aaa;font-size:0.9em;">综合得分</span>
                         <span style="color:#ffd200;font-weight:600;">${overall > 0 ? overall.toFixed(1) : '-'}</span>
                     </div>
-                    ${editTeamBtn ? `<div style="margin-top:12px;text-align:right;">${editTeamBtn}</div>` : ''}
+                    ${(editTeamBtn || editHonorBtn) ? `<div style="margin-top:12px;text-align:right;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">${editTeamBtn}${editHonorBtn}</div>` : ''}
                 </div>`;
             });
             container.innerHTML = html;
@@ -1350,9 +1576,10 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             sorted.forEach((p, i) => {
                 const rank = i + 1;
                 let bc = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'normal';
+                const honorHtml = (p.honors && p.honors.length > 0) ? renderHonorBadges(p.honors) : '';
                 html += `<tr>
                     <td><span class="rank-badge ${bc}">${rank}</span></td>
-                    <td><div style="font-weight:600;">${esc(p.name)}</div><div style="font-size:0.8em;color:#888;">${esc(p.team)}</div></td>
+                    <td><div style="font-weight:600;">${esc(p.name)}</div><div style="font-size:0.8em;color:#888;">${esc(p.team)}</div>${honorHtml}</td>
                     <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.opAvg/10*100}%"></div></div><span class="bar-value">${p.opAvg>0?p.opAvg.toFixed(1):'-'}</span></div></td>
                     <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.mgAvg/10*100}%"></div></div><span class="bar-value">${p.mgAvg>0?p.mgAvg.toFixed(1):'-'}</span></div></td>
                     <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.cmAvg/10*100}%"></div></div><span class="bar-value">${p.cmAvg>0?p.cmAvg.toFixed(1):'-'}</span></div></td>
