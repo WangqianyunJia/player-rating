@@ -512,6 +512,8 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         let currentVoter = localStorage.getItem('current_voter') || '';
         let tempRatings = {};
         let realtimeChannel = null;
+        let _reloadTimer = null;
+        let _skipNextRealtime = false;
 
         // ===== Cloud Init =====
         function initCloud() {
@@ -596,9 +598,9 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         }
 
         // ===== Cloud Data Operations =====
-        async function loadAllData() {
+        async function loadAllData(showLoadingOverlay = true) {
             if (!cloudReady) return;
-            showLoading(true);
+            if (showLoadingOverlay) showLoading(true);
             try {
                 // Load players
                 const { data: playerData, error: pErr } = await sbClient
@@ -635,7 +637,16 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 console.error('Load data error:', e);
                 showToast('❌ 加载数据失败: ' + e.message);
             }
-            showLoading(false);
+            if (showLoadingOverlay) showLoading(false);
+        }
+
+        // 防抖静默刷新：Realtime 触发时使用，不显示加载遮罩
+        function debouncedSilentReload() {
+            if (_reloadTimer) clearTimeout(_reloadTimer);
+            _reloadTimer = setTimeout(() => {
+                _reloadTimer = null;
+                loadAllData(false);
+            }, 800);
         }
 
         async function cloudAddPlayer(id, name, team) {
@@ -675,19 +686,25 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         function subscribeToChanges() {
             if (!sbClient) return;
 
-            // Subscribe to players table changes
             realtimeChannel = sbClient
                 .channel('db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
-                    console.log('Players changed:', payload);
-                    loadAllData();
+                    console.log('Players changed:', payload.eventType);
+                    // 选手变更：静默防抖刷新
+                    debouncedSilentReload();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, (payload) => {
-                    console.log('Votes changed:', payload);
-                    loadAllData();
+                    console.log('Votes changed:', payload.eventType);
+                    // 如果是自己刚提交的评分，跳过这次 Realtime 触发
+                    if (_skipNextRealtime) {
+                        _skipNextRealtime = false;
+                        return;
+                    }
+                    // 别人的评分变更：静默防抖刷新
+                    debouncedSilentReload();
                 })
                 .subscribe((status) => {
-                    console.log('Realtime subscription status:', status);
+                    console.log('Realtime status:', status);
                 });
         }
 
@@ -822,6 +839,8 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
             showLoading(true);
             try {
+                // 标记跳过 Realtime 回弹，避免自己提交后又触发一次全量刷新
+                _skipNextRealtime = true;
                 await cloudSaveVote(playerId, currentVoter, ratings);
                 if (!votes[playerId]) votes[playerId] = {};
                 votes[playerId][currentVoter] = { ...ratings };
@@ -829,6 +848,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 renderAll();
                 showToast('✅ 评分已提交！');
             } catch (e) {
+                _skipNextRealtime = false;
                 showToast('❌ 提交失败: ' + e.message);
             }
             showLoading(false);
