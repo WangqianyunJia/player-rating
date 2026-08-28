@@ -621,8 +621,8 @@
         <div class="conn-bar">
             <span class="conn-dot" id="connDot"></span>
             <span id="connStatus">未连接</span>
-            <button class="conn-btn" onclick="toggleConfig()">⚙️ 配置</button>
-            <button class="conn-btn" onclick="showResetModal()">🗑️ 重置</button>
+            <button class="conn-btn" id="configBtn" onclick="toggleConfig()" style="display:none;">⚙️ 配置</button>
+            <button class="conn-btn" id="resetBtn" onclick="showResetModal()" style="display:none;">🗑️ 重置</button>
             <button class="conn-btn" id="adminLoginBtn" onclick="showAdminLogin()">🔑 管理员登录</button>
         </div>
 
@@ -848,16 +848,22 @@
         function updateAdminUI() {
             const btn = document.getElementById('adminLoginBtn');
             const addSection = document.querySelector('.add-section');
+            const configBtn = document.getElementById('configBtn');
+            const resetBtn = document.getElementById('resetBtn');
             if (isAdmin) {
                 btn.textContent = '🔓 退出管理员';
                 btn.style.borderColor = 'rgba(201,168,76,0.6)';
                 btn.style.color = '#ffd700';
                 if (addSection) addSection.style.display = '';
+                if (configBtn) configBtn.style.display = '';
+                if (resetBtn) resetBtn.style.display = '';
             } else {
                 btn.textContent = '🔑 管理员登录';
                 btn.style.borderColor = '';
                 btn.style.color = '';
                 if (addSection) addSection.style.display = 'none';
+                if (configBtn) configBtn.style.display = 'none';
+                if (resetBtn) resetBtn.style.display = 'none';
             }
         }
 
