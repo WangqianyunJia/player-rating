@@ -657,8 +657,8 @@
             <h2>👤 投票人身份</h2>
             <div class="voter-input-row">
                 <div class="form-group" style="flex:1; min-width: 200px;">
-                    <label>系统将通过您的网络IP识别身份（每个IP只能投票一次，可重复编辑）</label>
-                    <input type="text" id="voterIPDisplay" readonly placeholder="正在获取您的网络标识..." style="background:rgba(20,12,5,0.8); cursor:default;" />
+                    <label>请输入您的投票ID（每个IP只能投票一次，可重复编辑）</label>
+                    <input type="text" id="voterIdInput" placeholder="输入您的投票ID，如：小明" />
                 </div>
                 <button class="btn btn-primary" onclick="confirmVoter()" id="btnConfirmVoter">确认身份</button>
             </div>
@@ -1365,7 +1365,10 @@
             return html;
         }
 
-        // ===== Voter (IP-based) =====
+        // ===== Voter (IP-based with custom ID display) =====
+        let voterIP = null; // 隐藏的IP，用于投票限制
+        let voterCustomId = null; // 用户自定义的投票ID
+
         async function fetchVoterIP() {
             const services = [
                 'https://api.ipify.org?format=json',
@@ -1385,46 +1388,47 @@
         }
 
         async function confirmVoter() {
-            if (!currentVoter) {
-                showToast('⚠️ 正在获取您的网络标识...');
-                const ip = await fetchVoterIP();
-                currentVoter = ip;
-                localStorage.setItem('current_voter', ip);
+            const input = document.getElementById('voterIdInput');
+            const customId = input ? input.value.trim() : '';
+            
+            if (!customId) {
+                showToast('⚠️ 请输入您的投票ID');
+                return;
             }
-            const ipDisplay = document.getElementById('voterIPDisplay');
-            if (ipDisplay) {
-                ipDisplay.value = maskIP(currentVoter);
+
+            // 获取IP用于投票限制（隐藏）
+            if (!voterIP) {
+                showToast('⚠️ 正在验证网络...');
+                voterIP = await fetchVoterIP();
+                localStorage.setItem('voter_ip', voterIP);
             }
+
+            // 保存自定义ID
+            voterCustomId = customId;
+            currentVoter = voterIP; // 投票记录仍然用IP作为key
+            localStorage.setItem('voter_custom_id', customId);
+            localStorage.setItem('current_voter', voterIP);
+
             updateVoterStatus();
             renderAll();
-            const maskedIP = maskIP(currentVoter);
-            showToast(`✅ 已确认身份：${maskedIP}（每个IP只能投票一次，可重复编辑）`);
-        }
-
-        function maskIP(ip) {
-            if (!ip || ip.startsWith('unknown_')) return '网络标识已确认';
-            const parts = ip.split('.');
-            if (parts.length === 4) {
-                return `${parts[0]}.${parts[1]}.*.*`;
-            }
-            return ip.substring(0, 6) + '***';
+            showToast(`✅ 投票ID「${customId}」已确认（每个IP只能投票一次，可重复编辑）`);
         }
 
         function updateVoterStatus() {
             const el = document.getElementById('voterStatus');
-            if (!currentVoter) { el.innerHTML = ''; return; }
+            if (!voterCustomId && !currentVoter) { el.innerHTML = ''; return; }
             let votedCount = 0;
             players.forEach(p => {
                 if (votes[p.id] && votes[p.id][currentVoter]) votedCount++;
             });
             const total = players.length;
-            const maskedIP = maskIP(currentVoter);
+            const displayName = voterCustomId || '已确认';
             if (total === 0) {
-                el.innerHTML = `<span class="voter-status not-voted">🌐 身份: ${maskedIP} · 暂无选手可评分</span>`;
+                el.innerHTML = `<span class="voter-status not-voted">👤 投票ID: ${displayName} · 暂无选手可评分</span>`;
             } else if (votedCount === total) {
-                el.innerHTML = `<span class="voter-status voted">✅ 身份: ${maskedIP} · 已完成全部 ${total} 位选手的评分（可重复编辑）</span>`;
+                el.innerHTML = `<span class="voter-status voted">✅ 投票ID: ${displayName} · 已完成全部 ${total} 位选手的评分（可重复编辑）</span>`;
             } else {
-                el.innerHTML = `<span class="voter-status not-voted">📝 身份: ${maskedIP} · 已评 ${votedCount}/${total} 位选手（每个IP只能投票一次，可重复编辑）</span>`;
+                el.innerHTML = `<span class="voter-status not-voted">📝 投票ID: ${displayName} · 已评 ${votedCount}/${total} 位选手（每个IP只能投票一次，可重复编辑）</span>`;
             }
         }
 
@@ -1838,7 +1842,7 @@
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                if (e.target.id === 'voterName') confirmVoter();
+                if (e.target.id === 'voterIdInput') confirmVoter();
                 if (e.target.id === 'playerName' || e.target.id === 'playerTeam') addPlayer();
             }
         });
@@ -1856,17 +1860,22 @@
         // Init
         initCloud();
 
-        // Auto-fetch IP for voter identity
+        // Auto-fetch IP for voter identity (hidden, used for vote limiting)
         (async () => {
-            if (!currentVoter) {
-                const ip = await fetchVoterIP();
-                currentVoter = ip;
-                localStorage.setItem('current_voter', ip);
+            // 获取IP用于投票限制（隐藏）
+            if (!voterIP) {
+                voterIP = localStorage.getItem('voter_ip') || await fetchVoterIP();
+                localStorage.setItem('voter_ip', voterIP);
             }
-            const ipDisplay = document.getElementById('voterIPDisplay');
-            if (ipDisplay) {
-                ipDisplay.value = maskIP(currentVoter);
+            currentVoter = voterIP;
+            
+            // 恢复自定义ID
+            voterCustomId = localStorage.getItem('voter_custom_id');
+            if (voterCustomId) {
+                const input = document.getElementById('voterIdInput');
+                if (input) input.value = voterCustomId;
             }
+            
             updateVoterStatus();
             renderAll();
         })();
