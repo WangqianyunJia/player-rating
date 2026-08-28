@@ -408,6 +408,30 @@
         .edit-team-modal-actions { display: flex; gap: 10px; }
         .edit-team-modal-actions .btn { flex: 1; text-align: center; }
 
+        /* Hero Avatar - WC3 Themed */
+        .hero-avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 2px solid #c9a84c;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3em; font-weight: 900; color: #ffd700;
+            font-family: 'Cinzel', serif;
+            box-shadow: 0 0 12px rgba(201,168,76,0.5), inset 0 0 8px rgba(0,0,0,0.4);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(255,215,0,0.4);
+            position: relative; overflow: hidden;
+            letter-spacing: -1px;
+        }
+        .hero-avatar::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%);
+            border-radius: 50%; pointer-events: none;
+        }
+        .hero-name-tag {
+            font-size: 0.72em; color: #a08050; font-style: italic;
+            font-family: 'Cinzel', serif; margin-top: 1px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 140px;
+        }
+
         .btn-edit-sm {
             background: rgba(139,90,43,0.2); color: #c9a84c;
             border: 1px solid rgba(139,90,43,0.3); padding: 4px 10px;
@@ -868,6 +892,100 @@
             }
         }
 
+        // ===== WC3 Hero Avatars =====
+        const WC3_HEROES = [
+            // 人族 (Human)
+            { name: '圣骑士', short: '帕', gradient: 'linear-gradient(135deg, #4a7ab5 0%, #8fb8e8 50%, #c0c0c0 100%)' },
+            { name: '大法师', short: '安', gradient: 'linear-gradient(135deg, #1a3a6a 0%, #4a7ab5 50%, #a0c0e0 100%)' },
+            { name: '山丘之王', short: '姆', gradient: 'linear-gradient(135deg, #6a4a2a 0%, #a07040 50%, #c0a070 100%)' },
+            { name: '血魔法师', short: '血', gradient: 'linear-gradient(135deg, #8b1a1a 0%, #c03030 50%, #ff6060 100%)' },
+            // 兽族 (Orc)
+            { name: '剑圣', short: '剑', gradient: 'linear-gradient(135deg, #6a0000 0%, #b02020 50%, #e04040 100%)' },
+            { name: '先知', short: '先', gradient: 'linear-gradient(135deg, #003a6a 0%, #0060a0 50%, #40a0e0 100%)' },
+            { name: '牛头人酋长', short: '牛', gradient: 'linear-gradient(135deg, #3a2a1a 0%, #6a4a2a 50%, #a07040 100%)' },
+            { name: '暗影猎手', short: '暗', gradient: 'linear-gradient(135deg, #2a4a00 0%, #508020 50%, #80c040 100%)' },
+            // 不死族 (Undead)
+            { name: '死亡骑士', short: '骑', gradient: 'linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 50%, #4040a0 100%)' },
+            { name: '巫妖', short: '巫', gradient: 'linear-gradient(135deg, #003040 0%, #006080 50%, #40b0d0 100%)' },
+            { name: '恐惧魔王', short: '恐', gradient: 'linear-gradient(135deg, #2a002a 0%, #5a005a 50%, #a040a0 100%)' },
+            { name: '地穴领主', short: '穴', gradient: 'linear-gradient(135deg, #1a2a00 0%, #3a5a20 50%, #608040 100%)' },
+            // 暗夜精灵 (Night Elf)
+            { name: '恶魔猎手', short: '魔', gradient: 'linear-gradient(135deg, #3a005a 0%, #6a00a0 50%, #a040e0 100%)' },
+            { name: '月之女祭司', short: '月', gradient: 'linear-gradient(135deg, #c0a040 0%, #e0c060 50%, #f0e0a0 100%)' },
+            { name: '守望者', short: '守', gradient: 'linear-gradient(135deg, #1a0040 0%, #3a0080 50%, #6040c0 100%)' },
+            { name: '丛林守护者', short: '丛', gradient: 'linear-gradient(135deg, #004020 0%, #008040 50%, #40c080 100%)' },
+            // 中立英雄 (Neutral)
+            { name: '炼金术士', short: '炼', gradient: 'linear-gradient(135deg, #4a6a00 0%, #80a020 50%, #c0e040 100%)' },
+            { name: '深渊魔王', short: '渊', gradient: 'linear-gradient(135deg, #4a0000 0%, #800020 50%, #c04040 100%)' },
+            { name: '熊猫酒仙', short: '熊', gradient: 'linear-gradient(135deg, #5a3a1a 0%, #8a5a2a 50%, #c08040 100%)' },
+            { name: '娜迦海女', short: '娜', gradient: 'linear-gradient(135deg, #004060 0%, #0080a0 50%, #40c0e0 100%)' },
+            { name: '黑暗游侠', short: '黑', gradient: 'linear-gradient(135deg, #1a002a 0%, #3a004a 50%, #6a4080 100%)' },
+            { name: '驯兽师', short: '驯', gradient: 'linear-gradient(135deg, #6a4a00 0%, #a07020 50%, #e0a040 100%)' },
+            { name: '地精修补匠', short: '修', gradient: 'linear-gradient(135deg, #3a3a00 0%, #6a6a20 50%, #a0a040 100%)' },
+            { name: '火焰领主', short: '火', gradient: 'linear-gradient(135deg, #8a2a00 0%, #c04020 50%, #ff6040 100%)' },
+            { name: '月亮女猎手', short: '猎', gradient: 'linear-gradient(135deg, #2a005a 0%, #4a00a0 50%, #8040e0 100%)' },
+            { name: '泰坦守护者', short: '坦', gradient: 'linear-gradient(135deg, #4a4a5a 0%, #7a7a8a 50%, #b0b0c0 100%)' },
+            { name: '骷髅王', short: '骷', gradient: 'linear-gradient(135deg, #2a2a2a 0%, #4a4a4a 50%, #808080 100%)' },
+            { name: '哥布林飞行器', short: '飞', gradient: 'linear-gradient(135deg, #5a4a00 0%, #8a7a20 50%, #c0b040 100%)' },
+            { name: '中立熊猫', short: '猫', gradient: 'linear-gradient(135deg, #3a3a3a 0%, #6a6a6a 50%, #a0a0a0 100%)' },
+            { name: '复仇天神', short: '复', gradient: 'linear-gradient(135deg, #c0a000 0%, #e0c040 50%, #ffe080 100%)' },
+            // 额外英雄 (用于超过30人时)
+            { name: '半人马酋长', short: '半', gradient: 'linear-gradient(135deg, #5a3a00 0%, #8a5a20 50%, #c08040 100%)' },
+            { name: '暗影牧师', short: '牧', gradient: 'linear-gradient(135deg, #4a2a5a 0%, #7a4a8a 50%, #b080c0 100%)' },
+            { name: '遗忘者', short: '遗', gradient: 'linear-gradient(135deg, #2a3a4a 0%, #4a6a7a 50%, #80a0b0 100%)' },
+            { name: '萨满祭司', short: '萨', gradient: 'linear-gradient(135deg, #005a3a 0%, #208a5a 50%, #40c080 100%)' },
+            { name: '龙骑士', short: '龙', gradient: 'linear-gradient(135deg, #6a2a00 0%, #a04a20 50%, #e07040 100%)' },
+        ];
+
+        let playerHeroMap = {}; // playerId -> hero index
+
+        function assignHeroes() {
+            const saved = localStorage.getItem('wc3_hero_assignments');
+            if (saved) {
+                try {
+                    playerHeroMap = JSON.parse(saved);
+                    // Check if all current players have assignments
+                    const allAssigned = players.every(p => playerHeroMap[p.id] !== undefined);
+                    if (allAssigned && Object.keys(playerHeroMap).length >= players.length) return;
+                } catch(e) {}
+            }
+
+            // Shuffle and assign
+            const indices = Array.from({length: WC3_HEROES.length}, (_, i) => i);
+            // Fisher-Yates shuffle with seed from player count
+            let seed = players.length * 7 + 13;
+            for (let i = indices.length - 1; i > 0; i--) {
+                seed = (seed * 9301 + 49297) % 233280;
+                const j = Math.floor((seed / 233280) * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            playerHeroMap = {};
+            players.forEach((p, i) => {
+                playerHeroMap[p.id] = indices[i % indices.length];
+            });
+            localStorage.setItem('wc3_hero_assignments', JSON.stringify(playerHeroMap));
+        }
+
+        function getHeroForPlayer(playerId) {
+            const idx = playerHeroMap[playerId];
+            if (idx !== undefined && WC3_HEROES[idx]) return WC3_HEROES[idx];
+            // Fallback
+            const hash = playerId.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+            return WC3_HEROES[hash % WC3_HEROES.length];
+        }
+
+        function renderHeroAvatar(playerId, playerName) {
+            const hero = getHeroForPlayer(playerId);
+            const initial = playerName ? playerName.charAt(0).toUpperCase() : '?';
+            return `<div class="hero-avatar" style="background:${hero.gradient}" title="${hero.name}">${initial}</div>`;
+        }
+
+        function renderHeroNameTag(playerId) {
+            const hero = getHeroForPlayer(playerId);
+            return `<div class="hero-name-tag">${hero.name}</div>`;
+        }
+
         // ===== Cloud =====
         function toggleConfig() {
             const p = document.getElementById('configPanel');
@@ -981,6 +1099,7 @@
                     };
                 });
 
+                assignHeroes();
                 renderAll();
             } catch (e) {
                 console.error('Load error:', e);
@@ -1048,6 +1167,15 @@
             try {
                 await cloudAddPlayer(id, name, team || '未分组');
                 players.push({ id, name, team: team || '未分组', honors: [], createdAt: new Date() });
+                // Assign hero to new player
+                const usedHeroes = new Set(Object.values(playerHeroMap));
+                let heroIdx = -1;
+                for (let i = 0; i < WC3_HEROES.length; i++) {
+                    if (!usedHeroes.has(i)) { heroIdx = i; break; }
+                }
+                if (heroIdx === -1) heroIdx = players.length % WC3_HEROES.length;
+                playerHeroMap[id] = heroIdx;
+                localStorage.setItem('wc3_hero_assignments', JSON.stringify(playerHeroMap));
                 document.getElementById('playerId').value = '';
                 document.getElementById('playerName').value = '';
                 document.getElementById('playerTeam').value = '';
@@ -1069,6 +1197,8 @@
                 await cloudDeletePlayer(id);
                 players = players.filter(p => p.id !== id);
                 delete votes[id];
+                delete playerHeroMap[id];
+                localStorage.setItem('wc3_hero_assignments', JSON.stringify(playerHeroMap));
                 renderAll();
                 showToast('✅ 已删除');
             } catch (e) {
@@ -1392,19 +1522,19 @@
                 const overall = getPlayerOverall(player.id);
                 const voteCount = getVoteCount(player.id);
                 const hasVoted = currentVoter && votes[player.id] && votes[player.id][currentVoter];
-                const initial = player.name.charAt(0).toUpperCase();
-                const c = colors[idx % colors.length];
                 const deleteBtn = isAdmin ? `<button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>` : '';
+                const hero = getHeroForPlayer(player.id);
 
                 html += `
                 <div class="player-card">
                     ${deleteBtn}
                     <div class="player-header">
                         <div class="player-info">
-                            <div class="player-avatar" style="background:linear-gradient(135deg,${c[0]},${c[1]})">${initial}</div>
+                            ${renderHeroAvatar(player.id, player.name)}
                             <div>
                                 <div class="player-name">${esc(player.name)}</div>
                                 <div class="player-team">${esc(player.team)}</div>
+                                ${renderHeroNameTag(player.id)}
                             </div>
                         </div>
                     </div>
@@ -1448,7 +1578,6 @@
             players.forEach((player, idx) => {
                 const voteCount = getVoteCount(player.id);
                 const overall = getPlayerOverall(player.id);
-                const initial = player.name.charAt(0).toUpperCase();
                 const deleteBtn = isAdmin ? `<button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>` : '';
                 const editTeamBtn = isAdmin ? `<button class="btn-edit-sm" onclick="showEditTeamModal('${player.id}')">🏷️ 编辑分组</button>` : '';
                 const editHonorBtn = isAdmin ? `<button class="btn-honor-sm" onclick="showEditHonorModal('${player.id}')">🏆 编辑荣誉</button>` : '';
@@ -1458,10 +1587,11 @@
                     ${deleteBtn}
                     <div class="player-header">
                         <div class="player-info">
-                            <div class="player-avatar">${initial}</div>
+                            ${renderHeroAvatar(player.id, player.name)}
                             <div>
                                 <div class="player-name">${esc(player.name)}</div>
                                 <div class="player-team">${esc(player.team)}</div>
+                                ${renderHeroNameTag(player.id)}
                                 ${honorDisplay}
                             </div>
                         </div>
@@ -1690,6 +1820,8 @@
                 players = [];
                 votes = {};
                 tempRatings = {};
+                playerHeroMap = {};
+                localStorage.removeItem('wc3_hero_assignments');
                 closeResetModal();
                 renderAll();
                 showToast('🗑️ 所有数据已重置');
