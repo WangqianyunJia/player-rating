@@ -3,29 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>选手评分系统</title>
+    <title>⚔️ 魔兽争霸3 · 选手评分系统</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background: 
+                radial-gradient(ellipse at top, rgba(40,20,0,0.8) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(20,10,0,0.8) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0605 0%, #1a0f08 30%, #0d0805 70%, #050302 100%);
             min-height: 100vh;
-            color: #e0e0e0;
+            color: #d4c5a0;
+            position: relative;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+        /* Subtle texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,90,43,0.03) 2px, rgba(139,90,43,0.03) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139,90,43,0.02) 2px, rgba(139,90,43,0.02) 4px);
+            pointer-events: none;
+            z-index: 0;
+        }
 
-        /* Header */
-        .header { text-align: center; margin-bottom: 40px; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; position: relative; z-index: 1; }
+
+        /* Header - Warcraft 3 Style */
+        .header { text-align: center; margin-bottom: 40px; position: relative; }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -20px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 600px; height: 4px;
+            background: linear-gradient(90deg, transparent, #8b5a2b, #c9a84c, #8b5a2b, transparent);
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px; left: 50%; transform: translateX(-50%);
+            width: 60%; max-width: 400px; height: 2px;
+            background: linear-gradient(90deg, transparent, #8b5a2b, transparent);
+        }
         .header h1 {
-            font-size: 2.4em;
-            background: linear-gradient(90deg, #f7971e, #ffd200);
+            font-family: 'Cinzel', 'MedievalSharp', serif;
+            font-size: 2.6em;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffd700 0%, #c9a84c 40%, #8b6914 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; margin-bottom: 8px; letter-spacing: 2px;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(201,168,76,0.3);
+            letter-spacing: 4px;
+            margin-bottom: 8px;
         }
-        .header p { color: #9e9e9e; font-size: 1.05em; }
+        .header p { 
+            color: #8b7355; 
+            font-size: 1em; 
+            font-style: italic;
+            letter-spacing: 2px;
+        }
 
         /* Connection Status */
         .conn-bar {
@@ -38,95 +79,131 @@
         .conn-dot.config { background: #ff9800; box-shadow: 0 0 6px #ff9800; }
 
         .conn-btn {
-            background: none; border: 1px solid rgba(255,255,255,0.15);
-            color: #aaa; padding: 3px 10px; border-radius: 12px;
+            background: none; border: 1px solid rgba(139,90,43,0.4);
+            color: #8b7355; padding: 3px 10px; border-radius: 12px;
             cursor: pointer; font-size: 0.8em; transition: all 0.3s;
         }
-        .conn-btn:hover { border-color: #ffd200; color: #ffd200; }
+        .conn-btn:hover { border-color: #c9a84c; color: #c9a84c; }
 
-        /* Tabs */
+        /* Tabs - WC3 Style */
         .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
         .tab-btn {
-            padding: 10px 28px; border: 2px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.05); color: #ccc;
-            border-radius: 30px; cursor: pointer; font-size: 1em; transition: all 0.3s;
+            padding: 10px 28px; 
+            border: 2px solid rgba(139,90,43,0.4);
+            background: linear-gradient(180deg, rgba(40,25,10,0.8) 0%, rgba(20,12,5,0.9) 100%);
+            color: #8b7355;
+            border-radius: 4px; 
+            cursor: pointer; font-size: 1em; transition: all 0.3s;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
-        .tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .tab-btn:hover { 
+            background: linear-gradient(180deg, rgba(60,35,15,0.9) 0%, rgba(30,18,8,0.95) 100%);
+            color: #c9a84c; 
+            border-color: #8b5a2b;
+        }
         .tab-btn.active {
-            background: linear-gradient(135deg, #f7971e, #ffd200);
-            color: #1a1a2e; border-color: transparent; font-weight: 600;
+            background: linear-gradient(180deg, #8b5a2b 0%, #5c3a1e 100%);
+            color: #ffd700; 
+            border-color: #c9a84c;
+            box-shadow: 0 0 15px rgba(201,168,76,0.3), inset 0 1px 0 rgba(255,215,0,0.2);
         }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
         /* Config Panel */
         .config-panel {
-            background: rgba(255, 152, 0, 0.08);
-            border: 1px solid rgba(255, 152, 0, 0.25);
-            border-radius: 16px; padding: 28px; margin-bottom: 24px;
+            background: linear-gradient(180deg, rgba(40,25,10,0.6) 0%, rgba(20,12,5,0.8) 100%);
+            border: 1px solid rgba(139,90,43,0.4);
+            border-radius: 4px; padding: 28px; margin-bottom: 24px;
+            box-shadow: inset 0 1px 0 rgba(139,90,43,0.2);
         }
-        .config-panel h2 { color: #ff9800; font-size: 1.3em; margin-bottom: 8px; }
-        .config-panel .desc { color: #aaa; font-size: 0.9em; margin-bottom: 18px; line-height: 1.6; }
-        .config-panel .desc a { color: #ffd200; text-decoration: none; }
+        .config-panel h2 { color: #c9a84c; font-size: 1.3em; margin-bottom: 8px; font-family: 'Cinzel', serif; }
+        .config-panel .desc { color: #8b7355; font-size: 0.9em; margin-bottom: 18px; line-height: 1.6; }
+        .config-panel .desc a { color: #c9a84c; text-decoration: none; }
         .config-panel .desc a:hover { text-decoration: underline; }
         .config-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
         .config-form .form-group { flex: 1; min-width: 200px; }
         .config-steps {
-            background: rgba(0,0,0,0.2); border-radius: 10px; padding: 16px 20px;
-            margin-bottom: 18px; font-size: 0.88em; line-height: 1.8; color: #bbb;
+            background: rgba(0,0,0,0.3); border-radius: 4px; padding: 16px 20px;
+            margin-bottom: 18px; font-size: 0.88em; line-height: 1.8; color: #8b7355;
+            border: 1px solid rgba(139,90,43,0.2);
         }
-        .config-steps strong { color: #ffd200; }
+        .config-steps strong { color: #c9a84c; }
         .config-steps code {
-            background: rgba(255,255,255,0.1); padding: 1px 6px;
-            border-radius: 4px; font-size: 0.9em; color: #4facfe;
+            background: rgba(139,90,43,0.2); padding: 1px 6px;
+            border-radius: 3px; font-size: 0.9em; color: #c9a84c;
         }
 
         /* Shared Components */
         .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 0.85em; color: #aaa; }
+        .form-group label { font-size: 0.85em; color: #8b7355; }
         .form-group input, .form-group select {
-            padding: 10px 14px; border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.08); color: #fff;
-            border-radius: 10px; font-size: 0.95em; outline: none; transition: border-color 0.3s;
+            padding: 10px 14px; 
+            border: 1px solid rgba(139,90,43,0.4);
+            background: rgba(20,12,5,0.8); 
+            color: #d4c5a0;
+            border-radius: 4px; 
+            font-size: 0.95em; 
+            outline: none; 
+            transition: border-color 0.3s;
         }
-        .form-group input:focus, .form-group select:focus { border-color: #ffd200; }
-        .form-group select option { background: #2a2a4a; color: #fff; }
+        .form-group input:focus, .form-group select:focus { 
+            border-color: #c9a84c; 
+            box-shadow: 0 0 8px rgba(201,168,76,0.2);
+        }
+        .form-group select option { background: #1a0f08; color: #d4c5a0; }
 
         .btn {
-            padding: 10px 24px; border: none; border-radius: 10px;
+            padding: 10px 24px; border: none; border-radius: 4px;
             font-size: 0.95em; cursor: pointer; transition: all 0.3s; font-weight: 600;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 1px;
         }
-        .btn-primary { background: linear-gradient(135deg, #f7971e, #ffd200); color: #1a1a2e; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(255,210,0,0.3); }
-        .btn-danger { background: rgba(255,82,82,0.2); color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
-        .btn-danger:hover { background: rgba(255,82,82,0.35); }
-        .btn-ghost { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-ghost:hover { background: rgba(255,255,255,0.15); }
+        .btn-primary { 
+            background: linear-gradient(180deg, #c9a84c 0%, #8b6914 100%); 
+            color: #1a0f08;
+            box-shadow: 0 2px 8px rgba(139,105,20,0.4), inset 0 1px 0 rgba(255,215,0,0.3);
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 15px rgba(201,168,76,0.5), inset 0 1px 0 rgba(255,215,0,0.4);
+        }
+        .btn-danger { background: rgba(139,30,30,0.4); color: #ff6b6b; border: 1px solid rgba(139,30,30,0.5); }
+        .btn-danger:hover { background: rgba(139,30,30,0.6); }
+        .btn-ghost { background: rgba(139,90,43,0.2); color: #8b7355; border: 1px solid rgba(139,90,43,0.3); }
+        .btn-ghost:hover { background: rgba(139,90,43,0.3); color: #c9a84c; }
 
         /* Add Section */
         .add-section {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 28px; margin-bottom: 30px;
+            background: linear-gradient(180deg, rgba(40,25,10,0.5) 0%, rgba(20,12,5,0.7) 100%);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px; padding: 28px; margin-bottom: 30px;
         }
-        .add-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #ffd200; }
+        .add-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #c9a84c; font-family: 'Cinzel', serif; }
         .add-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
 
-        /* Player Cards */
-        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        /* Player Cards - WC3 Style */
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
         .player-card {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 24px; transition: all 0.3s;
+            background: linear-gradient(180deg, rgba(40,25,10,0.6) 0%, rgba(20,12,5,0.8) 100%);
+            border: 1px solid rgba(139,90,43,0.4);
+            border-radius: 4px; padding: 24px; transition: all 0.3s;
             position: relative; overflow: hidden;
             animation: fadeIn 0.4s ease forwards;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
         .player-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0;
-            height: 3px; background: linear-gradient(90deg, #f7971e, #ffd200);
-            opacity: 0; transition: opacity 0.3s;
+            height: 3px; 
+            background: linear-gradient(90deg, transparent, #8b5a2b, #c9a84c, #8b5a2b, transparent);
+            opacity: 0.6; transition: opacity 0.3s;
         }
         .player-card:hover {
-            transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-            border-color: rgba(255,210,0,0.2);
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(139,90,43,0.2);
+            border-color: rgba(201,168,76,0.4);
         }
         .player-card:hover::before { opacity: 1; }
 
@@ -134,501 +211,394 @@
         .player-info { display: flex; align-items: center; gap: 12px; }
         .player-avatar {
             width: 48px; height: 48px; border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #8b5a2b, #5c3a1e);
+            border: 2px solid #c9a84c;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.2em; font-weight: 700; color: #fff;
+            font-size: 1.2em; font-weight: 700; color: #ffd700;
+            font-family: 'Cinzel', serif;
+            box-shadow: 0 0 10px rgba(139,90,43,0.4);
         }
-        .player-name { font-size: 1.2em; font-weight: 600; }
-        .player-team { font-size: 0.8em; color: #999; margin-top: 2px; }
+        .player-name { font-size: 1.2em; font-weight: 600; color: #d4c5a0; font-family: 'Cinzel', serif; }
+        .player-team { font-size: 0.8em; color: #8b7355; margin-top: 2px; }
         .player-delete {
             position: absolute; top: 12px; right: 12px; background: none; border: none;
-            color: #666; cursor: pointer; font-size: 1.2em; transition: color 0.3s;
-            padding: 4px 8px; border-radius: 6px;
+            color: #5c3a1e; cursor: pointer; font-size: 1.2em; transition: color 0.3s;
+            padding: 4px 8px; border-radius: 4px;
         }
-        .player-delete:hover { color: #ff5252; background: rgba(255,82,82,0.1); }
+        .player-delete:hover { color: #ff5252; background: rgba(139,30,30,0.2); }
 
-        /* Rating */
+        /* Rating - WC3 Style */
         .rating-section { margin-bottom: 16px; }
         .rating-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 8px 0; border-bottom: 1px solid rgba(139,90,43,0.15);
+            flex-wrap: nowrap;
         }
         .rating-row:last-child { border-bottom: none; }
-        .rating-label { font-size: 0.9em; color: #bbb; min-width: 60px; }
-        .rating-stars { display: flex; gap: 3px; }
+        .rating-label { 
+            font-size: 0.9em; color: #c9a84c; min-width: 70px; 
+            font-family: 'Cinzel', serif;
+        }
+        .rating-stars { 
+            display: flex; gap: 2px; 
+            flex-shrink: 0;
+            min-width: 0;
+        }
         .star {
-            width: 26px; height: 26px; cursor: pointer; transition: all 0.2s; position: relative;
+            width: 22px; height: 22px; cursor: pointer; transition: all 0.2s; position: relative;
+            flex-shrink: 0;
         }
         .star svg { width: 100%; height: 100%; }
-        .star .star-fill { fill: #444; transition: fill 0.2s; }
-        .star.active .star-fill { fill: #ffd200; }
+        .star .star-fill { fill: #3a2a1a; transition: fill 0.2s; }
+        .star.active .star-fill { fill: #ffd700; filter: drop-shadow(0 0 3px rgba(255,215,0,0.5)); }
         .star:hover .star-fill { fill: #ffab00; }
         .star:hover { transform: scale(1.15); }
-        .rating-value { font-size: 0.9em; color: #ffd200; font-weight: 600; min-width: 30px; text-align: right; }
+        .rating-value { font-size: 0.9em; color: #c9a84c; font-weight: 600; min-width: 30px; text-align: right; }
 
         /* Score Display */
         .score-display {
-            background: rgba(255,210,0,0.08); border: 1px solid rgba(255,210,0,0.15);
-            border-radius: 12px; padding: 14px; text-align: center; margin-top: 12px;
+            background: linear-gradient(180deg, rgba(139,90,43,0.15) 0%, rgba(139,90,43,0.05) 100%);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px; padding: 14px; text-align: center; margin-top: 12px;
         }
-        .score-label { font-size: 0.8em; color: #999; margin-bottom: 4px; }
+        .score-label { font-size: 0.8em; color: #8b7355; margin-bottom: 4px; }
         .score-value {
             font-size: 2em; font-weight: 700;
-            background: linear-gradient(90deg, #f7971e, #ffd200);
+            background: linear-gradient(180deg, #ffd700 0%, #c9a84c 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            font-family: 'Cinzel', serif;
         }
-        .vote-count { font-size: 0.8em; color: #888; margin-top: 4px; }
+        .vote-count { font-size: 0.8em; color: #8b7355; margin-top: 4px; }
 
         .btn-vote {
-            width: 100%; margin-top: 12px; padding: 10px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff; border: none; border-radius: 10px;
+            width: 100%; margin-top: 12px; padding: 12px;
+            background: linear-gradient(180deg, #8b5a2b 0%, #5c3a1e 100%);
+            color: #ffd700; border: 1px solid #c9a84c; border-radius: 4px;
             font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.3s;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 8px rgba(139,90,43,0.4), inset 0 1px 0 rgba(255,215,0,0.2);
         }
-        .btn-vote:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(102,126,234,0.4); }
+        .btn-vote:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 15px rgba(139,90,43,0.5), inset 0 1px 0 rgba(255,215,0,0.3);
+            background: linear-gradient(180deg, #a0692f 0%, #6b4423 100%);
+        }
         .btn-vote:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* Ranking */
+        /* Ranking - WC3 Style */
         .ranking-section {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 28px; overflow-x: auto;
+            background: linear-gradient(180deg, rgba(40,25,10,0.5) 0%, rgba(20,12,5,0.7) 100%);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px; padding: 28px; overflow-x: auto;
         }
-        .ranking-section h2 { font-size: 1.3em; margin-bottom: 20px; color: #ffd200; }
+        .ranking-section h2 { font-size: 1.3em; margin-bottom: 20px; color: #c9a84c; font-family: 'Cinzel', serif; }
         .ranking-table { width: 100%; border-collapse: collapse; }
         .ranking-table th {
             text-align: left; padding: 12px 16px;
-            border-bottom: 2px solid rgba(255,255,255,0.1);
-            color: #aaa; font-size: 0.85em; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 2px solid rgba(139,90,43,0.4);
+            color: #c9a84c; font-size: 0.9em;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 1px;
         }
-        .ranking-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.95em; }
-        .ranking-table tr:hover td { background: rgba(255,255,255,0.03); }
+        .ranking-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(139,90,43,0.15);
+        }
+        .ranking-table tr:hover td { background: rgba(139,90,43,0.1); }
 
         .rank-badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border-radius: 50%; font-weight: 700;
+            width: 32px; height: 32px; border-radius: 50%;
+            font-weight: 700; font-size: 0.9em;
+            font-family: 'Cinzel', serif;
         }
-        .rank-badge.gold { background: rgba(255,215,0,0.15); color: #ffd700; }
-        .rank-badge.silver { background: rgba(192,192,192,0.15); color: #c0c0c0; }
-        .rank-badge.bronze { background: rgba(205,127,50,0.15); color: #cd7f32; }
-        .rank-badge.normal { background: rgba(255,255,255,0.05); color: #999; }
+        .rank-badge.gold { background: linear-gradient(135deg, #ffd700, #c9a84c); color: #1a0f08; box-shadow: 0 0 10px rgba(255,215,0,0.4); }
+        .rank-badge.silver { background: linear-gradient(135deg, #c0c0c0, #808080); color: #1a0f08; }
+        .rank-badge.bronze { background: linear-gradient(135deg, #cd7f32, #8b5a2b); color: #1a0f08; }
+        .rank-badge.normal { background: rgba(139,90,43,0.3); color: #8b7355; }
 
         .score-bar { display: flex; align-items: center; gap: 8px; }
-        .bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #f7971e, #ffd200); transition: width 0.5s ease; }
-        .bar-value { font-weight: 600; color: #ffd200; min-width: 36px; text-align: right; }
-
-        /* Voter */
-        .voter-section {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 28px; margin-bottom: 24px;
-        }
-        .voter-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #ffd200; }
-        .voter-input-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
-        .voter-status { padding: 8px 16px; border-radius: 20px; font-size: 0.85em; margin-top: 12px; display: inline-block; }
-        .voter-status.voted { background: rgba(76,175,80,0.15); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
-        .voter-status.not-voted { background: rgba(255,152,0,0.15); color: #ff9800; border: 1px solid rgba(255,152,0,0.3); }
+        .bar-bg { flex: 1; height: 8px; background: rgba(139,90,43,0.2); border-radius: 4px; overflow: hidden; min-width: 60px; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #8b5a2b, #c9a84c); border-radius: 4px; transition: width 0.5s; }
+        .bar-value { font-size: 0.85em; color: #c9a84c; min-width: 35px; }
 
         /* History */
-        .history-section {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 28px; margin-top: 24px;
+        .history-section { margin-top: 30px; }
+        .history-section h2 { font-size: 1.2em; margin-bottom: 16px; color: #c9a84c; font-family: 'Cinzel', serif; }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; margin-bottom: 6px;
+            background: rgba(139,90,43,0.1); border-radius: 4px;
+            border: 1px solid rgba(139,90,43,0.2);
         }
-        .history-section h2 { font-size: 1.3em; margin-bottom: 18px; color: #ffd200; }
-        .history-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .history-item:last-child { border-bottom: none; }
-        .history-voter { font-weight: 600; min-width: 80px; }
-        .history-scores { display: flex; gap: 16px; font-size: 0.85em; color: #aaa; }
-        .history-score-item { display: flex; align-items: center; gap: 4px; }
-        .history-score-item .val { color: #ffd200; font-weight: 600; }
+        .history-voter { color: #c9a84c; font-weight: 500; }
+        .history-scores { display: flex; gap: 12px; font-size: 0.85em; }
+        .history-score-item { color: #8b7355; }
+        .history-score-item .val { color: #d4c5a0; font-weight: 600; }
 
-        /* Empty / Toast / Modal */
-        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
-        .empty-state .icon { font-size: 3em; margin-bottom: 16px; }
-        .empty-state p { font-size: 1.1em; }
-
-        .toast {
-            position: fixed; bottom: 30px; left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(40,40,60,0.95); border: 1px solid rgba(255,210,0,0.3);
-            color: #fff; padding: 14px 28px; border-radius: 12px;
-            font-size: 0.95em; z-index: 1000; transition: transform 0.4s ease;
-            backdrop-filter: blur(10px);
+        /* Voter Section */
+        .voter-section {
+            background: linear-gradient(180deg, rgba(40,25,10,0.5) 0%, rgba(20,12,5,0.7) 100%);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px; padding: 20px 28px; margin-bottom: 24px;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); }
+        .voter-section h2 { font-size: 1.2em; margin-bottom: 12px; color: #c9a84c; font-family: 'Cinzel', serif; }
+        .voter-input-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+        .voter-status { margin-top: 12px; font-size: 0.9em; }
+        .voter-status.voted { color: #4caf50; }
+        .voter-status.not-voted { color: #8b7355; }
 
-        .modal-overlay {
+        /* Edit Team Modal */
+        .edit-team-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); z-index: 999;
+            background: rgba(0,0,0,0.8); z-index: 2000;
             align-items: center; justify-content: center; backdrop-filter: blur(4px);
         }
-        .modal-overlay.show { display: flex; }
-        .modal { background: #1e1e3a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 32px; max-width: 420px; width: 90%; }
-        .modal h3 { margin-bottom: 16px; color: #ffd200; }
-        .modal p { color: #aaa; margin-bottom: 20px; line-height: 1.6; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .edit-team-overlay.show { display: flex; }
+        .edit-team-modal {
+            background: linear-gradient(180deg, #2a1a0a 0%, #1a0f08 100%);
+            border: 1px solid rgba(139,90,43,0.5);
+            border-radius: 4px; padding: 36px; max-width: 400px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .edit-team-modal h3 { color: #c9a84c; font-size: 1.3em; margin-bottom: 8px; font-family: 'Cinzel', serif; }
+        .edit-team-modal .edit-team-desc { color: #8b7355; font-size: 0.9em; margin-bottom: 16px; }
+        .edit-team-modal .current-team { 
+            background: rgba(139,90,43,0.15); padding: 10px 14px; border-radius: 4px; 
+            margin-bottom: 16px; color: #c9a84c; font-size: 0.9em;
+            border: 1px solid rgba(139,90,43,0.3);
+        }
+        .edit-team-modal .form-group { margin-bottom: 16px; }
+        .edit-team-modal-actions { display: flex; gap: 10px; }
+        .edit-team-modal-actions .btn { flex: 1; text-align: center; }
 
-        .reset-section { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
-        .btn-reset {
-            background: rgba(255,82,82,0.1); color: #ff5252;
-            border: 1px solid rgba(255,82,82,0.2); padding: 8px 20px;
-            border-radius: 8px; cursor: pointer; font-size: 0.85em; transition: all 0.3s;
-        }
-        .btn-reset:hover { background: rgba(255,82,82,0.2); }
-
-        /* Vote Management */
-        .voter-manage-card {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 24px; margin-bottom: 16px;
-        }
-        .voter-manage-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .voter-manage-info { display: flex; align-items: center; gap: 12px; }
-        .voter-manage-name { font-size: 1.1em; font-weight: 600; color: #ffd200; }
-        .voter-manage-count { font-size: 0.85em; color: #aaa; }
-        .voter-manage-list { display: flex; flex-direction: column; gap: 8px; }
-        .voter-manage-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 16px; background: rgba(255,255,255,0.04); border-radius: 10px;
-        }
-        .voter-manage-item-info { display: flex; flex-direction: column; gap: 4px; }
-        .voter-manage-player { font-weight: 600; color: #fff; }
-        .voter-manage-scores { font-size: 0.8em; color: #aaa; }
-        .btn-danger-sm {
-            background: rgba(255,82,82,0.1); color: #ff5252;
-            border: 1px solid rgba(255,82,82,0.2); padding: 6px 12px;
-            border-radius: 6px; cursor: pointer; font-size: 0.8em; transition: all 0.3s;
-        }
-        .btn-danger-sm:hover { background: rgba(255,82,82,0.2); }
-        .btn-delete-sm {
-            background: rgba(255,152,0,0.1); color: #ff9800;
-            border: 1px solid rgba(255,152,0,0.2); padding: 4px 10px;
-            border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
-        }
-        .btn-delete-sm:hover { background: rgba(255,152,0,0.2); }
         .btn-edit-sm {
-            background: rgba(79,172,254,0.1); color: #4facfe;
-            border: 1px solid rgba(79,172,254,0.2); padding: 4px 10px;
-            border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
+            background: rgba(139,90,43,0.2); color: #c9a84c;
+            border: 1px solid rgba(139,90,43,0.3); padding: 4px 10px;
+            border-radius: 4px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
         }
-        .btn-edit-sm:hover { background: rgba(79,172,254,0.2); }
+        .btn-edit-sm:hover { background: rgba(139,90,43,0.3); }
         .btn-honor-sm {
-            background: rgba(255,215,0,0.1); color: #ffd700;
-            border: 1px solid rgba(255,215,0,0.2); padding: 4px 10px;
-            border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
+            background: rgba(201,168,76,0.15); color: #ffd700;
+            border: 1px solid rgba(201,168,76,0.3); padding: 4px 10px;
+            border-radius: 4px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
         }
-        .btn-honor-sm:hover { background: rgba(255,215,0,0.2); }
+        .btn-honor-sm:hover { background: rgba(201,168,76,0.25); }
 
-        /* Honor Badges in Ranking */
+        /* Honor Badges */
         .honor-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
         .honor-badge {
             display: inline-flex; align-items: center; gap: 3px;
             padding: 2px 8px; border-radius: 10px; font-size: 0.75em;
             font-weight: 600; white-space: nowrap;
         }
-        .honor-badge.gold { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.25); }
-        .honor-badge.silver { background: rgba(192,192,192,0.12); color: #d0d0d0; border: 1px solid rgba(192,192,192,0.2); }
-        .honor-badge.bronze { background: rgba(205,127,50,0.12); color: #cd7f32; border: 1px solid rgba(205,127,50,0.2); }
-        .honor-badge.default { background: rgba(79,172,254,0.1); color: #4facfe; border: 1px solid rgba(79,172,254,0.2); }
+        .honor-badge.gold { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
+        .honor-badge.silver { background: rgba(192,192,192,0.12); color: #d0d0d0; border: 1px solid rgba(192,192,192,0.25); }
+        .honor-badge.bronze { background: rgba(205,127,50,0.15); color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
+        .honor-badge.default { background: rgba(139,90,43,0.2); color: #c9a84c; border: 1px solid rgba(139,90,43,0.3); }
 
         /* Edit Honors Modal */
         .edit-honor-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); z-index: 3000;
-            align-items: center; justify-content: center; backdrop-filter: blur(6px);
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
         }
         .edit-honor-overlay.show { display: flex; }
         .edit-honor-modal {
-            background: #1e1e3a; border: 1px solid rgba(255,215,0,0.2);
-            border-radius: 20px; padding: 36px; max-width: 480px; width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto;
+            background: linear-gradient(180deg, #2a1a0a 0%, #1a0f08 100%);
+            border: 1px solid rgba(201,168,76,0.4);
+            border-radius: 4px; padding: 36px; max-width: 480px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6); max-height: 80vh; overflow-y: auto;
         }
-        .edit-honor-modal h3 {
-            color: #ffd700; font-size: 1.3em; margin-bottom: 8px; text-align: center;
-        }
-        .edit-honor-modal .edit-honor-desc {
-            color: #aaa; font-size: 0.9em; margin-bottom: 20px; text-align: center;
-        }
-        .honor-add-row {
-            display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap;
-        }
+        .edit-honor-modal h3 { color: #ffd700; font-size: 1.3em; margin-bottom: 8px; text-align: center; font-family: 'Cinzel', serif; }
+        .edit-honor-modal .edit-honor-desc { color: #8b7355; font-size: 0.9em; margin-bottom: 20px; text-align: center; }
+        .honor-add-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
         .honor-add-row .form-group { flex: 1; min-width: 120px; }
-        .honor-add-row .form-group label { color: #ccc; }
+        .honor-add-row .form-group label { color: #8b7355; }
         .honor-add-row .form-group input,
         .honor-add-row .form-group select {
             width: 100%; padding: 10px 12px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.06); color: #fff;
-            border-radius: 10px; font-size: 0.9em; outline: none;
+            border: 1px solid rgba(139,90,43,0.4);
+            background: rgba(20,12,5,0.8); color: #d4c5a0;
+            border-radius: 4px; font-size: 0.9em; outline: none;
         }
         .honor-add-row .form-group input:focus,
-        .honor-add-row .form-group select:focus { border-color: #ffd700; }
-        .honor-add-row .form-group select option { background: #2a2a4a; color: #fff; }
+        .honor-add-row .form-group select:focus { border-color: #c9a84c; }
+        .honor-add-row .form-group select option { background: #1a0f08; color: #d4c5a0; }
         .honor-list-edit { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
         .honor-list-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 14px; background: rgba(255,255,255,0.04); border-radius: 10px;
+            padding: 10px 14px; background: rgba(139,90,43,0.1); border-radius: 4px;
+            border: 1px solid rgba(139,90,43,0.2);
         }
         .honor-list-item-info { display: flex; align-items: center; gap: 8px; }
-        .honor-list-item-name { font-weight: 600; color: #fff; }
+        .honor-list-item-name { font-weight: 600; color: #d4c5a0; }
         .honor-list-item-rank { font-size: 0.85em; }
-        .edit-honor-modal-actions {
-            display: flex; gap: 10px; margin-top: 20px;
-        }
+        .honor-list-item-rank.gold { color: #ffd700; }
+        .honor-list-item-rank.silver { color: #d0d0d0; }
+        .honor-list-item-rank.bronze { color: #cd7f32; }
+        .honor-list-item-rank.default { color: #c9a84c; }
+        .edit-honor-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
         .edit-honor-modal-actions .btn { flex: 1; text-align: center; }
 
-        /* Edit Team Modal */
-        .edit-team-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); z-index: 3000;
-            align-items: center; justify-content: center; backdrop-filter: blur(6px);
+        /* Vote Management */
+        .voter-manage-card {
+            background: linear-gradient(180deg, rgba(40,25,10,0.5) 0%, rgba(20,12,5,0.7) 100%);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px; padding: 20px; margin-bottom: 16px;
         }
-        .edit-team-overlay.show { display: flex; }
-        .edit-team-modal {
-            background: #1e1e3a; border: 1px solid rgba(79,172,254,0.2);
-            border-radius: 20px; padding: 36px; max-width: 380px; width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        .voter-manage-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; padding-bottom: 12px;
+            border-bottom: 1px solid rgba(139,90,43,0.2);
         }
-        .edit-team-modal h3 {
-            color: #4facfe; font-size: 1.3em; margin-bottom: 8px; text-align: center;
+        .voter-manage-info { display: flex; align-items: center; gap: 12px; }
+        .voter-manage-name { font-weight: 600; color: #c9a84c; font-size: 1.05em; }
+        .voter-manage-count { font-size: 0.85em; color: #8b7355; }
+        .voter-manage-list { display: flex; flex-direction: column; gap: 8px; }
+        .voter-manage-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; background: rgba(139,90,43,0.1); border-radius: 4px;
         }
-        .edit-team-modal .edit-team-desc {
-            color: #aaa; font-size: 0.9em; margin-bottom: 20px; text-align: center;
-        }
-        .edit-team-modal .current-team {
-            background: rgba(79,172,254,0.08); border: 1px solid rgba(79,172,254,0.15);
-            border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
-            font-size: 0.9em; color: #4facfe; text-align: center;
-        }
-        .edit-team-modal .form-group { margin-bottom: 14px; }
-        .edit-team-modal .form-group label { color: #ccc; }
-        .edit-team-modal .form-group input {
-            width: 100%; padding: 12px 14px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.06); color: #fff;
-            border-radius: 10px; font-size: 0.95em; outline: none;
-        }
-        .edit-team-modal .form-group input:focus { border-color: #4facfe; }
-        .edit-team-modal-actions {
-            display: flex; gap: 10px; margin-top: 20px;
-        }
-        .edit-team-modal-actions .btn { flex: 1; text-align: center; }
+        .voter-manage-item-info { display: flex; flex-direction: column; gap: 4px; }
+        .voter-manage-player { font-weight: 500; color: #d4c5a0; }
+        .voter-manage-scores { font-size: 0.8em; color: #8b7355; }
 
-        /* Admin Bar */
-        .admin-bar {
-            display: flex; align-items: center; justify-content: flex-end;
-            gap: 10px; margin-bottom: 12px; font-size: 0.85em;
+        .btn-danger-sm {
+            background: rgba(139,30,30,0.3); color: #ff6b6b;
+            border: 1px solid rgba(139,30,30,0.4); padding: 4px 10px;
+            border-radius: 4px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
         }
-        .admin-badge {
-            background: linear-gradient(135deg, #f7971e, #ffd200);
-            color: #1a1a2e; padding: 4px 12px; border-radius: 12px;
-            font-weight: 600; font-size: 0.85em;
+        .btn-danger-sm:hover { background: rgba(139,30,30,0.5); }
+        .btn-delete-sm {
+            background: rgba(139,30,30,0.2); color: #ff6b6b;
+            border: 1px solid rgba(139,30,30,0.3); padding: 4px 10px;
+            border-radius: 4px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
         }
-        .admin-login-btn {
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-            color: #ccc; padding: 5px 14px; border-radius: 14px;
-            cursor: pointer; font-size: 0.85em; transition: all 0.3s;
-        }
-        .admin-login-btn:hover { border-color: #ffd200; color: #ffd200; }
-        .admin-logout-btn {
-            background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2);
-            color: #ff5252; padding: 4px 12px; border-radius: 12px;
-            cursor: pointer; font-size: 0.8em; transition: all 0.3s;
-        }
-        .admin-logout-btn:hover { background: rgba(255,82,82,0.2); }
-
-        /* Admin Login Modal */
-        .admin-modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); z-index: 3000;
-            align-items: center; justify-content: center; backdrop-filter: blur(6px);
-        }
-        .admin-modal-overlay.show { display: flex; }
-        .admin-modal {
-            background: #1e1e3a; border: 1px solid rgba(255,210,0,0.2);
-            border-radius: 20px; padding: 36px; max-width: 380px; width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        .admin-modal h3 {
-            color: #ffd200; font-size: 1.3em; margin-bottom: 8px; text-align: center;
-        }
-        .admin-modal .admin-desc {
-            color: #aaa; font-size: 0.9em; margin-bottom: 20px; text-align: center;
-        }
-        .admin-modal .form-group { margin-bottom: 14px; }
-        .admin-modal .form-group label { color: #ccc; }
-        .admin-modal .form-group input {
-            width: 100%; padding: 12px 14px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.06); color: #fff;
-            border-radius: 10px; font-size: 0.95em; outline: none;
-        }
-        .admin-modal .form-group input:focus { border-color: #ffd200; }
-        .admin-modal-actions {
-            display: flex; gap: 10px; margin-top: 20px;
-        }
-        .admin-modal-actions .btn { flex: 1; text-align: center; }
-
-        /* Loading */
-        .loading-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15,12,41,0.8); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column; gap: 16px;
-        }
-        .loading-overlay.hidden { display: none; }
-        .spinner {
-            width: 40px; height: 40px; border: 3px solid rgba(255,210,0,0.2);
-            border-top-color: #ffd200; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { color: #aaa; font-size: 0.95em; }
+        .btn-delete-sm:hover { background: rgba(139,30,30,0.4); }
 
         /* Share Section */
         .share-section {
-            background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.2);
-            border-radius: 16px; padding: 24px; margin-bottom: 24px; text-align: center;
+            background: linear-gradient(180deg, rgba(40,25,10,0.5) 0%, rgba(20,12,5,0.7) 100%);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px; padding: 20px 28px; margin-bottom: 24px;
         }
-        .share-section h3 { color: #4caf50; margin-bottom: 12px; }
-        .share-url {
-            display: flex; gap: 8px; align-items: center; justify-content: center;
-            margin-top: 12px; flex-wrap: wrap;
+        .share-section h2 { font-size: 1.2em; margin-bottom: 12px; color: #c9a84c; font-family: 'Cinzel', serif; }
+        .share-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .share-row input {
+            flex: 1; min-width: 200px; padding: 10px 14px;
+            border: 1px solid rgba(139,90,43,0.4);
+            background: rgba(20,12,5,0.8); color: #d4c5a0;
+            border-radius: 4px; font-size: 0.9em; outline: none;
         }
-        .share-url input {
-            flex: 1; min-width: 250px; padding: 10px 14px;
-            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08);
-            color: #fff; border-radius: 10px; font-size: 0.9em; outline: none;
-        }
-        .btn-copy {
-            padding: 10px 20px; background: linear-gradient(135deg, #43e97b, #38f9d7);
-            color: #1a1a2e; border: none; border-radius: 10px;
-            font-weight: 600; cursor: pointer; transition: all 0.3s;
-        }
-        .btn-copy:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(67,233,123,0.3); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Reset Modal */
+        .reset-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 4000;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+        }
+        .reset-overlay.show { display: flex; }
+        .reset-modal {
+            background: linear-gradient(180deg, #2a1a0a 0%, #1a0f08 100%);
+            border: 1px solid rgba(139,30,30,0.5);
+            border-radius: 4px; padding: 36px; max-width: 400px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .reset-modal h3 { color: #ff6b6b; font-size: 1.3em; margin-bottom: 12px; font-family: 'Cinzel', serif; }
+        .reset-modal p { color: #8b7355; margin-bottom: 20px; line-height: 1.6; }
+        .reset-modal-actions { display: flex; gap: 10px; }
+        .reset-modal-actions .btn { flex: 1; text-align: center; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(180deg, #2a1a0a 0%, #1a0f08 100%);
+            border: 1px solid rgba(139,90,43,0.5);
+            color: #c9a84c; padding: 12px 24px; border-radius: 4px;
+            font-size: 0.95em; z-index: 9999;
+            opacity: 0; transition: opacity 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .toast.show { opacity: 1; }
+
+        /* Loading */
+        .loading-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 9998;
+            align-items: center; justify-content: center;
+        }
+        .loading-overlay.show { display: flex; }
+        .loading-spinner {
+            width: 50px; height: 50px; border: 3px solid rgba(139,90,43,0.3);
+            border-top-color: #c9a84c; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #8b7355; }
+        .empty-state .icon { font-size: 3em; margin-bottom: 12px; opacity: 0.5; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 600px) {
-            .header h1 { font-size: 1.6em; }
+            .header h1 { font-size: 1.8em; }
             .players-grid { grid-template-columns: 1fr; }
-            .add-form, .config-form { flex-direction: column; }
-            .form-group { width: 100%; }
-            .form-group input, .form-group select { width: 100%; }
-            .tabs { flex-wrap: wrap; }
-            .rating-stars { gap: 2px; }
-            .star { width: 22px; height: 22px; }
+            .rating-row { flex-wrap: wrap; gap: 4px; }
+            .rating-stars { order: 3; width: 100%; justify-content: flex-start; }
         }
     </style>
 </head>
 <body>
-    <!-- Loading -->
-    <div class="loading-overlay hidden" id="loadingOverlay">
-        <div class="spinner"></div>
-        <div class="loading-text">加载中...</div>
-    </div>
-
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🏆 选手评分系统</h1>
-            <p>为选手的操作、运营、沟通能力打分，系统自动计算综合得分</p>
+            <h1>⚔️ 魔兽争霸3 · 选手评分</h1>
+            <p>— 荣耀属于最强战士 —</p>
         </div>
 
         <!-- Connection Status -->
-        <div class="conn-bar" id="connBar">
-            <span class="conn-dot config" id="connDot"></span>
-            <span id="connText">未连接云端</span>
-            <button class="conn-btn" id="connBtn" onclick="toggleConfig()">设置</button>
-        </div>
-
-        <!-- Admin Bar -->
-        <div class="admin-bar" id="adminBar" style="display:none;">
-            <span id="adminStatus"></span>
+        <div class="conn-bar">
+            <span class="conn-dot" id="connDot"></span>
+            <span id="connStatus">未连接</span>
+            <button class="conn-btn" onclick="toggleConfig()">⚙️ 配置</button>
+            <button class="conn-btn" onclick="showResetModal()">🗑️ 重置</button>
         </div>
 
         <!-- Config Panel -->
-        <div class="config-panel" id="configPanel">
-            <h2>🔗 Supabase 云数据库配置</h2>
+        <div class="config-panel" id="configPanel" style="display:none;">
+            <h2>⚙️ 云端配置</h2>
             <div class="desc">
-                本系统使用 <a href="https://supabase.com" target="_blank">Supabase</a> 作为云端数据库，多人共享同一份数据。
+                使用 <a href="https://supabase.com" target="_blank">Supabase</a> 实现多人实时同步评分。
             </div>
             <div class="config-steps">
-                <strong>📖 配置步骤：</strong><br>
-                1. 打开 👉 <a href="https://supabase.com" target="_blank">supabase.com</a> → 点击「Start your project」<br>
-                2. 用 <strong>GitHub 账号登录</strong>（你已经有 GitHub 了！）<br>
-                3. 点击「New Project」→ 填写项目名（如「评分系统」）→ 设置数据库密码 → 选区域（推荐 Northeast Asia）→ 创建<br>
-                4. 等待 1-2 分钟项目初始化完成<br>
-                5. 左侧菜单点击「SQL Editor」→ 点击「New Query」→ 粘贴下面的 SQL 并点击「Run」：<br>
-                <code style="display:block; margin-top:8px; white-space:pre; line-height:1.6;">
-CREATE TABLE players (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  team TEXT DEFAULT '未分组',
-  honors TEXT DEFAULT '[]',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE votes (
-  id BIGSERIAL PRIMARY KEY,
-  player_id TEXT NOT NULL,
-  voter_name TEXT NOT NULL,
-  operation INT DEFAULT 0,
-  management INT DEFAULT 0,
-  communication INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(player_id, voter_name)
-);
-
--- 开启匿名访问权限
-ALTER TABLE players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "允许所有人读取选手" ON players FOR SELECT USING (true);
-CREATE POLICY "允许所有人创建选手" ON players FOR INSERT WITH CHECK (true);
-CREATE POLICY "允许所有人更新选手" ON players FOR UPDATE USING (true) WITH CHECK (true);
-CREATE POLICY "允许所有人删除选手" ON players FOR DELETE USING (true);
-
-CREATE POLICY "允许所有人读取投票" ON votes FOR SELECT USING (true);
-CREATE POLICY "允许所有人创建投票" ON votes FOR INSERT WITH CHECK (true);
-CREATE POLICY "允许所有人更新投票" ON votes FOR UPDATE USING (true) WITH CHECK (true);
-CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
-                </code>
-                <br>
-                6. 左侧菜单点击「Settings」→「API」→ 复制 <code>Project URL</code> 和 <code>anon public key</code> 填入下方
+                <strong>配置步骤：</strong><br>
+                1. 注册 <a href="https://supabase.com" target="_blank">Supabase</a> 账号并创建项目<br>
+                2. 在 SQL Editor 中执行建表语句<br>
+                3. 获取 <code>SUPABASE_URL</code> 和 <code>SUPABASE_ANON_KEY</code><br>
+                4. 填入下方并保存
             </div>
             <div class="config-form">
                 <div class="form-group">
-                    <label>Project URL</label>
-                    <input type="text" id="cfgUrl" placeholder="粘贴你的 Project URL" />
+                    <label>Supabase URL</label>
+                    <input type="text" id="sbUrl" placeholder="https://xxxxx.supabase.co" />
                 </div>
                 <div class="form-group">
-                    <label>Anon Key</label>
-                    <input type="text" id="cfgKey" placeholder="粘贴你的 anon public key" />
+                    <label>Supabase Anon Key</label>
+                    <input type="text" id="sbKey" placeholder="eyJhbGciOi..." />
                 </div>
-                <button class="btn btn-primary" onclick="saveConfig()">连接云端</button>
+                <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
             </div>
         </div>
 
-        <!-- Share Section (shown when connected) -->
-        <div class="share-section" id="shareSection" style="display:none;">
-            <h3>📤 分享链接给微信好友</h3>
-            <p style="color:#aaa; font-size:0.9em;">复制下方链接，发送到微信群或好友，打开即可投票</p>
-            <div class="share-url">
-                <input type="text" id="shareUrl" readonly />
-                <button class="btn-copy" onclick="copyShareUrl()">📋 复制链接</button>
-            </div>
-        </div>
-
-        <!-- Voter Identity (IP-based) -->
+        <!-- Voter Identity -->
         <div class="voter-section">
             <h2>👤 投票人身份</h2>
             <div class="voter-input-row">
                 <div class="form-group" style="flex:1; min-width: 200px;">
                     <label>系统将通过您的网络IP识别身份（每个IP只能投票一次，可重复编辑）</label>
-                    <input type="text" id="voterIPDisplay" readonly placeholder="正在获取您的网络标识..." style="background:rgba(255,255,255,0.04); cursor:default;" />
+                    <input type="text" id="voterIPDisplay" readonly placeholder="正在获取您的网络标识..." style="background:rgba(20,12,5,0.8); cursor:default;" />
                 </div>
                 <button class="btn btn-primary" onclick="confirmVoter()" id="btnConfirmVoter">确认身份</button>
             </div>
@@ -637,61 +607,71 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('vote')">📝 评分投票</button>
-            <button class="tab-btn" onclick="switchTab('ranking')">📊 排行榜</button>
-            <button class="tab-btn" onclick="switchTab('manage')">⚙️ 管理选手</button>
-            <button class="tab-btn" onclick="switchTab('voteManage')">🗑️ 管理投票</button>
+            <button class="tab-btn active" onclick="switchTab('vote')">⚔️ 评分</button>
+            <button class="tab-btn" onclick="switchTab('ranking')">🏆 排行榜</button>
+            <button class="tab-btn" onclick="switchTab('manage')">📋 管理</button>
         </div>
 
-        <!-- Tab: Vote -->
-        <div class="tab-panel active" id="panel-vote">
-            <div id="playersVoteList" class="players-grid"></div>
-            <div id="emptyVote" class="empty-state" style="display:none;">
-                <div class="icon">🎮</div>
-                <p>暂无选手，请先在「管理选手」中添加</p>
+        <!-- Vote Tab -->
+        <div class="tab-panel active" id="tab-vote">
+            <!-- Add Player -->
+            <div class="add-section">
+                <h2>➕ 添加选手</h2>
+                <div class="add-form">
+                    <div class="form-group">
+                        <label>选手ID</label>
+                        <input type="text" id="playerId" placeholder="唯一标识" />
+                    </div>
+                    <div class="form-group">
+                        <label>选手名称</label>
+                        <input type="text" id="playerName" placeholder="如：Moon" />
+                    </div>
+                    <div class="form-group">
+                        <label>分组（可选）</label>
+                        <input type="text" id="playerTeam" placeholder="如：人族" />
+                    </div>
+                    <button class="btn btn-primary" onclick="addPlayer()">添加</button>
+                </div>
+            </div>
+
+            <!-- Players List -->
+            <div class="players-grid" id="playersVoteList"></div>
+            <div class="empty-state" id="emptyVote" style="display:none;">
+                <div class="icon">⚔️</div>
+                <p>暂无选手，请先添加</p>
             </div>
         </div>
 
-        <!-- Tab: Ranking -->
-        <div class="tab-panel" id="panel-ranking">
+        <!-- Ranking Tab -->
+        <div class="tab-panel" id="tab-ranking">
             <div class="ranking-section">
-                <h2>📊 综合排名</h2>
+                <h2>🏆 选手排行榜</h2>
                 <div id="rankingContent"></div>
             </div>
         </div>
 
-        <!-- Tab: Manage -->
-        <div class="tab-panel" id="panel-manage">
-            <div class="add-section">
-                <h2>➕ 添加选手</h2>
-                <div class="add-form">
-                    <div class="form-group" style="flex:1; min-width:150px;">
-                        <label>选手名称</label>
-                        <input type="text" id="playerName" placeholder="输入选手名称" />
-                    </div>
-                    <div class="form-group" style="min-width:120px;">
-                        <label>战队/分组</label>
-                        <input type="text" id="playerTeam" placeholder="可选" />
-                    </div>
-                    <button class="btn btn-primary" onclick="addPlayer()">添加选手</button>
+        <!-- Manage Tab -->
+        <div class="tab-panel" id="tab-manage">
+            <div class="ranking-section">
+                <h2>📋 选手管理</h2>
+                <div class="players-grid" id="playersManageList"></div>
+                <div class="empty-state" id="emptyManage" style="display:none;">
+                    <div class="icon">📋</div>
+                    <p>暂无选手</p>
                 </div>
             </div>
-            <div id="playersManageList" class="players-grid"></div>
-            <div id="emptyManage" class="empty-state" style="display:none;">
-                <div class="icon">📋</div>
-                <p>还没有选手，快来添加吧！</p>
-            </div>
-            <div class="reset-section">
-                <button class="btn-reset" onclick="showResetModal()">🗑️ 重置所有数据</button>
-            </div>
-        </div>
 
-        <!-- Tab: Vote Manage -->
-        <div class="tab-panel" id="panel-voteManage">
-            <div class="ranking-section">
-                <h2>🗑️ 管理投票</h2>
-                <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">查看所有投票记录，点击「删除」移除单条投票，或点击「清空」移除某人的所有投票。</p>
+            <div class="ranking-section" style="margin-top: 24px;">
+                <h2>🗳️ 投票管理</h2>
                 <div id="voteManageContent"></div>
+            </div>
+
+            <div class="share-section" style="margin-top: 24px;">
+                <h2>🔗 分享链接</h2>
+                <div class="share-row">
+                    <input type="text" id="shareUrl" readonly />
+                    <button class="btn btn-primary" onclick="copyShareUrl()">📋 复制</button>
+                </div>
             </div>
         </div>
     </div>
@@ -699,34 +679,19 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
-    <!-- Reset Modal -->
-    <div class="modal-overlay" id="resetModal">
-        <div class="modal">
-            <h3>⚠️ 确认重置</h3>
-            <p>此操作将清除所有选手和评分数据，且不可恢复。确定要继续吗？</p>
-            <div class="modal-actions">
-                <button class="btn btn-ghost" onclick="closeResetModal()">取消</button>
-                <button class="btn btn-danger" onclick="resetAll()">确认重置</button>
-            </div>
-        </div>
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
     </div>
 
-    <!-- Admin Login Modal -->
-    <div class="modal-overlay" id="adminLoginModal">
-        <div class="modal">
-            <h3>🔐 管理员登录</h3>
-            <p style="color:var(--text-muted); margin-bottom:16px;">请输入管理员账号和密码</p>
-            <div class="form-group">
-                <label>用户名</label>
-                <input type="text" id="adminUsername" placeholder="请输入用户名" />
-            </div>
-            <div class="form-group">
-                <label>密码</label>
-                <input type="password" id="adminPassword" placeholder="请输入密码" />
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-ghost" onclick="closeAdminLogin()">取消</button>
-                <button class="btn btn-primary" onclick="doAdminLogin()">登录</button>
+    <!-- Reset Modal -->
+    <div class="reset-overlay" id="resetModal">
+        <div class="reset-modal">
+            <h3>⚠️ 确认重置</h3>
+            <p>确定要重置所有数据吗？<br>此操作不可恢复！</p>
+            <div class="reset-modal-actions">
+                <button class="btn btn-ghost" onclick="closeResetModal()">取消</button>
+                <button class="btn btn-danger" onclick="resetAll()">确认重置</button>
             </div>
         </div>
     </div>
@@ -735,7 +700,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
     <div class="edit-team-overlay" id="editTeamModal">
         <div class="edit-team-modal">
             <h3>🏷️ 编辑分组</h3>
-            <p class="edit-team-desc">修改选手 <strong id="editTeamPlayerName" style="color:#ffd200;"></strong> 的分组</p>
+            <p class="edit-team-desc">修改选手 <strong id="editTeamPlayerName" style="color:#c9a84c;"></strong> 的分组</p>
             <div class="current-team">当前分组：<span id="editTeamCurrentValue">未分组</span></div>
             <div class="form-group">
                 <label>新分组名称</label>
@@ -743,7 +708,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             </div>
             <div class="edit-team-modal-actions">
                 <button class="btn btn-ghost" onclick="closeEditTeamModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveEditTeam()" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">保存</button>
+                <button class="btn btn-primary" onclick="saveEditTeam()">保存</button>
             </div>
         </div>
     </div>
@@ -757,7 +722,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             <div class="honor-add-row">
                 <div class="form-group">
                     <label>比赛名称</label>
-                    <input type="text" id="honorCompInput" placeholder="如：2024春季联赛" />
+                    <input type="text" id="honorCompInput" placeholder="如：WCG2024" />
                 </div>
                 <div class="form-group" style="min-width:100px; flex:0.5;">
                     <label>名次</label>
@@ -774,232 +739,123 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                         <option value="参赛">参赛</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="addHonorToList()" style="padding:10px 16px; white-space:nowrap;">➕ 添加</button>
+                <button class="btn btn-primary" onclick="addHonorToList()">➕ 添加</button>
             </div>
 
-            <div style="color:#aaa; font-size:0.85em; margin-bottom:8px;">已有荣誉：</div>
+            <div style="color:#8b7355; font-size:0.85em; margin-bottom:8px;">已有荣誉：</div>
             <div class="honor-list-edit" id="honorListEdit">
-                <div style="color:#666; text-align:center; padding:12px;">暂无荣誉</div>
+                <div style="color:#5c3a1e; text-align:center; padding:12px;">暂无荣誉</div>
             </div>
 
             <div class="edit-honor-modal-actions">
                 <button class="btn btn-ghost" onclick="closeEditHonorModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveEditHonor()" style="background:linear-gradient(135deg,#ffd700,#ffab00);">💾 保存</button>
+                <button class="btn btn-primary" onclick="saveEditHonor()" style="background:linear-gradient(180deg,#c9a84c,#8b6914);">💾 保存</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ===== Supabase Config =====
-        // 硬编码 Supabase 配置，所有用户共享同一数据库
-        const SUPABASE_URL = 'https://izbneofkiorssrrlenla.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6Ym5lb2ZraW9yc3NycmxlbmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTU4NDEsImV4cCI6MjEwMzQ3MTg0MX0.cgTrA8pReT4sOzCMfqW--F9gMYpHZxeHZFybfVOMz2U';
-
+        // ===== State =====
         let sbClient = null;
         let cloudReady = false;
         let players = [];
         let votes = {}; // { playerId: { voterName: { operation, management, communication } } }
+        let isAdmin = false;
+
         let currentVoter = localStorage.getItem('current_voter') || '';
-        let tempRatings = {};
-        let realtimeChannel = null;
-        let _reloadTimer = null;
+        let currentVoterName = localStorage.getItem('current_voter') || '';
+        let currentVoterIP = localStorage.getItem('current_voter') || '';
+        let tempRatings = {}; // { playerId: { operation, management, communication } }
         let _skipNextRealtime = false;
         let _skipNextPlayerRealtime = false;
 
-        // ===== Admin State =====
-        let isAdmin = false;
-        let adminUsername = '';
-
-        // ===== Cloud Init =====
-        function initCloud() {
-            try {
-                sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                cloudReady = true;
-                updateConnStatus(true);
-                document.getElementById('configPanel').style.display = 'none';
-                document.getElementById('shareSection').style.display = 'block';
-                document.getElementById('shareUrl').value = window.location.href;
-                updateAdminBar();
-                updateTabVisibility();
-                loadAllData();
-                subscribeToChanges();
-            } catch (e) {
-                console.error('Supabase init error:', e);
-                updateConnStatus(false);
-            }
+        // ===== Cloud =====
+        function toggleConfig() {
+            const p = document.getElementById('configPanel');
+            p.style.display = p.style.display === 'none' ? 'block' : 'none';
         }
 
-        // ===== Admin Functions =====
-        function showAdminLogin() {
-            document.getElementById('adminLoginModal').classList.add('show');
-            document.getElementById('adminUsername').value = '';
-            document.getElementById('adminPassword').value = '';
-            setTimeout(() => document.getElementById('adminUsername').focus(), 100);
-        }
-
-        function closeAdminLogin() {
-            document.getElementById('adminLoginModal').classList.remove('show');
-        }
-
-        async function doAdminLogin() {
-            const username = document.getElementById('adminUsername').value.trim();
-            const password = document.getElementById('adminPassword').value;
-
-            if (!username || !password) {
-                showToast('⚠️ 请输入用户名和密码');
-                return;
-            }
-
-            if (!cloudReady) {
-                showToast('⚠️ 请先连接云端');
-                return;
-            }
-
-            showLoading(true);
-            try {
-                const { data, error } = await sbClient
-                    .from('admins')
-                    .select('*')
-                    .eq('username', username)
-                    .eq('password', password)
-                    .single();
-
-                if (error || !data) {
-                    showToast('❌ 用户名或密码错误');
-                    showLoading(false);
-                    return;
-                }
-
-                isAdmin = true;
-                adminUsername = username;
-                closeAdminLogin();
-                updateAdminBar();
-                updateTabVisibility();
-                renderAll();
-                showToast('✅ 管理员登录成功');
-            } catch (e) {
-                showToast('❌ 登录失败: ' + e.message);
-            }
-            showLoading(false);
-        }
-
-        function doAdminLogout() {
-            isAdmin = false;
-            adminUsername = '';
-            updateAdminBar();
-            updateTabVisibility();
-            renderAll();
-            showToast('已退出管理员模式');
-        }
-
-        function updateAdminBar() {
-            const bar = document.getElementById('adminBar');
-            const status = document.getElementById('adminStatus');
-            if (!cloudReady) {
-                bar.style.display = 'none';
-                return;
-            }
-            bar.style.display = 'flex';
-            if (isAdmin) {
-                status.innerHTML = `<span class="admin-badge">🔑 管理员: ${adminUsername}</span> <button class="admin-logout-btn" onclick="doAdminLogout()">退出</button>`;
-            } else {
-                status.innerHTML = `<button class="admin-login-btn" onclick="showAdminLogin()">🔐 管理员登录</button>`;
-            }
-        }
-
-        function updateTabVisibility() {
-            const btns = document.querySelectorAll('.tab-btn');
-            // Tabs: 0=评分投票, 1=排行榜, 2=管理选手, 3=管理投票
-            btns.forEach((btn, i) => {
-                if (i === 2 || i === 3) {
-                    // Admin-only tabs
-                    btn.style.display = isAdmin ? '' : 'none';
-                }
-            });
-            // If current tab is hidden, switch to vote tab
-            const activePanel = document.querySelector('.tab-panel.active');
-            if (activePanel && (activePanel.id === 'panel-manage' || activePanel.id === 'panel-voteManage') && !isAdmin) {
-                switchTab('vote');
-            }
-        }
-
-        async function saveConfig() {
-            const url = document.getElementById('cfgUrl').value.trim();
-            const key = document.getElementById('cfgKey').value.trim();
-
-            if (!url || !key) {
-                showToast('⚠️ 请填写 Project URL 和 Anon Key');
-                return;
-            }
-
+        function saveConfig() {
+            const url = document.getElementById('sbUrl').value.trim();
+            const key = document.getElementById('sbKey').value.trim();
+            if (!url || !key) { showToast('⚠️ 请填写完整'); return; }
             localStorage.setItem('sb_url', url);
             localStorage.setItem('sb_key', key);
+            initCloud();
+            showToast('✅ 配置已保存');
+        }
 
-            showLoading(true);
+        function loadConfig() {
+            const url = localStorage.getItem('sb_url');
+            const key = localStorage.getItem('sb_key');
+            if (url) document.getElementById('sbUrl').value = url;
+            if (key) document.getElementById('sbKey').value = key;
+            return { url, key };
+        }
+
+        async function initCloud() {
+            const { url, key } = loadConfig();
+            const dot = document.getElementById('connDot');
+            const status = document.getElementById('connStatus');
+
+            if (!url || !key) {
+                dot.className = 'conn-dot config';
+                status.textContent = '请配置云端';
+                return;
+            }
+
             try {
                 sbClient = supabase.createClient(url, key);
-                // Test connection
-                const { error } = await sbClient.from('players').select('*').limit(1);
+                const { error } = await sbClient.from('players').select('id').limit(1);
                 if (error) throw error;
 
                 cloudReady = true;
-                updateConnStatus(true);
-                document.getElementById('configPanel').style.display = 'none';
-                document.getElementById('shareSection').style.display = 'block';
-                document.getElementById('shareUrl').value = window.location.href;
-                loadAllData();
-                showToast('✅ 云端连接成功！');
-            } catch (e) {
-                showToast('❌ 连接失败: ' + e.message);
-                updateConnStatus(false);
-                localStorage.removeItem('sb_url');
-                localStorage.removeItem('sb_key');
-            }
-            showLoading(false);
-        }
-
-        function toggleConfig() {
-            const panel = document.getElementById('configPanel');
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-                document.getElementById('cfgUrl').value = localStorage.getItem('sb_url') || '';
-                document.getElementById('cfgKey').value = localStorage.getItem('sb_key') || '';
-            } else {
-                panel.style.display = 'none';
-            }
-        }
-
-        function updateConnStatus(online) {
-            const dot = document.getElementById('connDot');
-            const text = document.getElementById('connText');
-            const btn = document.getElementById('connBtn');
-            if (online) {
                 dot.className = 'conn-dot online';
-                text.textContent = '云端已连接 · 数据实时同步';
-                btn.textContent = '修改配置';
-            } else {
+                status.textContent = '已连接';
+                document.getElementById('configPanel').style.display = 'none';
+
+                // Check admin
+                const adminKey = localStorage.getItem('admin_key');
+                isAdmin = adminKey === 'wc3admin';
+
+                // Subscribe to realtime
+                sbClient.channel('players')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+                        if (!_skipNextPlayerRealtime) loadAllData();
+                        else _skipNextPlayerRealtime = false;
+                    })
+                    .subscribe();
+
+                sbClient.channel('votes')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => {
+                        if (!_skipNextRealtime) loadAllData();
+                        else _skipNextRealtime = false;
+                    })
+                    .subscribe();
+
+                await loadAllData();
+                updateShareUrl();
+            } catch (e) {
+                cloudReady = false;
                 dot.className = 'conn-dot offline';
-                text.textContent = '未连接云端 · 请先配置';
-                btn.textContent = '去配置';
+                status.textContent = '连接失败';
+                console.error(e);
             }
         }
 
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
-        }
-
-        // ===== Cloud Data Operations =====
-        async function loadAllData(showLoadingOverlay = true) {
+        async function loadAllData() {
             if (!cloudReady) return;
-            if (showLoadingOverlay) showLoading(true);
+
             try {
-                // Load players
-                const { data: playerData, error: pErr } = await sbClient
-                    .from('players')
-                    .select('*')
-                    .order('created_at', { ascending: true });
-                if (pErr) throw pErr;
-                players = (playerData || []).map(p => {
+                const [playerRes, voteRes] = await Promise.all([
+                    sbClient.from('players').select('*').order('created_at', { ascending: true }),
+                    sbClient.from('votes').select('*')
+                ]);
+
+                if (playerRes.error) throw playerRes.error;
+                if (voteRes.error) throw voteRes.error;
+
+                players = (playerRes.data || []).map(p => {
                     let honors = [];
                     if (p.honors) {
                         try {
@@ -1015,17 +871,10 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                     };
                 });
 
-                // Load votes
-                const { data: voteData, error: vErr } = await sbClient
-                    .from('votes')
-                    .select('*');
-                if (vErr) throw vErr;
                 votes = {};
-                (voteData || []).forEach(v => {
-                    const pid = v.player_id;
-                    const voter = v.voter_name;
-                    if (!votes[pid]) votes[pid] = {};
-                    votes[pid][voter] = {
+                (voteRes.data || []).forEach(v => {
+                    if (!votes[v.player_id]) votes[v.player_id] = {};
+                    votes[v.player_id][v.voter_name] = {
                         operation: v.operation || 0,
                         management: v.management || 0,
                         communication: v.communication || 0
@@ -1034,19 +883,8 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
                 renderAll();
             } catch (e) {
-                console.error('Load data error:', e);
-                showToast('❌ 加载数据失败: ' + e.message);
+                console.error('Load error:', e);
             }
-            if (showLoadingOverlay) showLoading(false);
-        }
-
-        // 防抖静默刷新：Realtime 触发时使用，不显示加载遮罩
-        function debouncedSilentReload() {
-            if (_reloadTimer) clearTimeout(_reloadTimer);
-            _reloadTimer = setTimeout(() => {
-                _reloadTimer = null;
-                loadAllData(false);
-            }, 800);
         }
 
         async function cloudAddPlayer(id, name, team) {
@@ -1054,13 +892,37 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (error) throw error;
         }
 
-        async function cloudDeletePlayer(playerId) {
-            // Delete votes first
-            const { error: vErr } = await sbClient.from('votes').delete().eq('player_id', playerId);
-            if (vErr) throw vErr;
-            // Delete player
-            const { error: pErr } = await sbClient.from('players').delete().eq('id', playerId);
-            if (pErr) throw pErr;
+        async function cloudDeletePlayer(id) {
+            await sbClient.from('votes').delete().eq('player_id', id);
+            const { error } = await sbClient.from('players').delete().eq('id', id);
+            if (error) throw error;
+        }
+
+        async function cloudSaveVote(playerId, voterName, ratings) {
+            const { error } = await sbClient.from('votes').upsert({
+                player_id: playerId,
+                voter_name: voterName,
+                operation: ratings.operation || 0,
+                management: ratings.management || 0,
+                communication: ratings.communication || 0
+            }, { onConflict: 'player_id,voter_name' });
+            if (error) throw error;
+        }
+
+        async function cloudDeleteVote(playerId, voterName) {
+            const { error } = await sbClient.from('votes').delete().eq('player_id', playerId).eq('voter_name', voterName);
+            if (error) throw error;
+        }
+
+        async function cloudDeleteVotesByVoter(voterName) {
+            const { error } = await sbClient.from('votes').delete().eq('voter_name', voterName);
+            if (error) throw error;
+        }
+
+        async function cloudResetAll() {
+            await sbClient.from('votes').delete().neq('id', 0);
+            const { error } = await sbClient.from('players').delete().neq('id', '');
+            if (error) throw error;
         }
 
         async function cloudUpdatePlayerTeam(playerId, newTeam) {
@@ -1073,180 +935,33 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (error) throw error;
         }
 
-        async function cloudSaveVote(playerId, voterName, scores) {
-            // Use upsert - this will insert or update if exists
-            const { error } = await sbClient.from('votes').upsert({
-                player_id: playerId,
-                voter_name: voterName,
-                operation: scores.operation,
-                management: scores.management,
-                communication: scores.communication
-            }, { onConflict: 'player_id,voter_name' });
-            if (error) throw error;
-        }
-
-        async function cloudResetAll() {
-            const { error: vErr } = await sbClient.from('votes').delete().neq('id', 0);
-            if (vErr) throw vErr;
-            const { error: pErr } = await sbClient.from('players').delete().neq('id', '');
-            if (pErr) throw pErr;
-        }
-
-        async function cloudDeleteVote(playerId, voterName) {
-            const { error } = await sbClient.from('votes').delete()
-                .eq('player_id', playerId)
-                .eq('voter_name', voterName);
-            if (error) throw error;
-        }
-
-        async function cloudDeleteVotesByVoter(voterName) {
-            const { error } = await sbClient.from('votes').delete()
-                .eq('voter_name', voterName);
-            if (error) throw error;
-        }
-
-        // ===== Realtime Subscription =====
-        function subscribeToChanges() {
-            if (!sbClient) return;
-
-            realtimeChannel = sbClient
-                .channel('db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
-                    console.log('Players changed:', payload.eventType);
-                    // 如果是自己刚编辑的分组，跳过这次 Realtime 触发
-                    if (_skipNextPlayerRealtime) {
-                        _skipNextPlayerRealtime = false;
-                        return;
-                    }
-                    // 选手变更：静默防抖刷新
-                    debouncedSilentReload();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, (payload) => {
-                    console.log('Votes changed:', payload.eventType);
-                    // 如果是自己刚提交的评分，跳过这次 Realtime 触发
-                    if (_skipNextRealtime) {
-                        _skipNextRealtime = false;
-                        return;
-                    }
-                    // 别人的评分变更：静默防抖刷新
-                    debouncedSilentReload();
-                })
-                .subscribe((status) => {
-                    console.log('Realtime status:', status);
-                });
-        }
-
-        // ===== Voter (IP-based) =====
-        async function fetchVoterIP() {
-            // Try multiple IP services for reliability
-            const services = [
-                'https://api.ipify.org?format=json',
-                'https://api.my-ip.io/v2/ip.json',
-                'https://ipinfo.io/json'
-            ];
-            for (const url of services) {
-                try {
-                    const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
-                    if (!resp.ok) continue;
-                    const data = await resp.json();
-                    // Different services return IP in different fields
-                    const ip = data.ip || data.query || null;
-                    if (ip) return ip;
-                } catch (e) { continue; }
-            }
-            // Fallback: generate a random ID if all services fail
-            return 'unknown_' + Math.random().toString(36).substr(2, 8);
-        }
-
-        async function confirmVoter() {
-            if (!currentVoter) {
-                showToast('⚠️ 正在获取您的网络标识...');
-                const ip = await fetchVoterIP();
-                currentVoter = ip;
-                localStorage.setItem('current_voter', ip);
-            }
-            // Update the IP display
-            const ipDisplay = document.getElementById('voterIPDisplay');
-            if (ipDisplay) {
-                ipDisplay.value = maskIP(currentVoter);
-            }
-            updateVoterStatus();
-            renderAll();
-            // Mask IP for privacy display
-            const maskedIP = maskIP(currentVoter);
-            showToast(`✅ 已确认身份：${maskedIP}（每个IP只能投票一次，可重复编辑）`);
-        }
-
-        function maskIP(ip) {
-            // Mask middle parts of IP for privacy: 1.2.3.4 -> 1.2.*.*
-            if (!ip || ip.startsWith('unknown_')) return '网络标识已确认';
-            const parts = ip.split('.');
-            if (parts.length === 4) {
-                return `${parts[0]}.${parts[1]}.*.*`;
-            }
-            // IPv6 or other format: show first 6 chars
-            return ip.substring(0, 6) + '***';
-        }
-
-        function updateVoterStatus() {
-            const el = document.getElementById('voterStatus');
-            if (!currentVoter) { el.innerHTML = ''; return; }
-            let votedCount = 0;
-            players.forEach(p => {
-                if (votes[p.id] && votes[p.id][currentVoter]) votedCount++;
-            });
-            const total = players.length;
-            const maskedIP = maskIP(currentVoter);
-            if (total === 0) {
-                el.innerHTML = `<span class="voter-status not-voted">🌐 身份: ${maskedIP} · 暂无选手可评分</span>`;
-            } else if (votedCount === total) {
-                el.innerHTML = `<span class="voter-status voted">✅ 身份: ${maskedIP} · 已完成全部 ${total} 位选手的评分（可重复编辑）</span>`;
-            } else {
-                el.innerHTML = `<span class="voter-status not-voted">📝 身份: ${maskedIP} · 已评 ${votedCount}/${total} 位选手（每个IP只能投票一次，可重复编辑）</span>`;
-            }
-        }
-
-        // ===== Tabs =====
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', ['vote', 'ranking', 'manage', 'voteManage'][i] === tab);
-            });
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('panel-' + tab).classList.add('active');
-            if (tab === 'ranking') renderRanking();
-            if (tab === 'voteManage') renderVoteManage();
-        }
-
         // ===== Players =====
         async function addPlayer() {
             if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
-            if (!isAdmin) { showToast('⚠️ 仅管理员可添加选手'); return; }
+            const id = document.getElementById('playerId').value.trim();
             const name = document.getElementById('playerName').value.trim();
             const team = document.getElementById('playerTeam').value.trim();
-            if (!name) { showToast('⚠️ 请输入选手名称'); return; }
-
-            const id = 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            if (!id || !name) { showToast('⚠️ 请填写ID和名称'); return; }
 
             showLoading(true);
             try {
                 await cloudAddPlayer(id, name, team || '未分组');
                 players.push({ id, name, team: team || '未分组', honors: [], createdAt: new Date() });
-                votes[id] = {};
+                document.getElementById('playerId').value = '';
                 document.getElementById('playerName').value = '';
                 document.getElementById('playerTeam').value = '';
                 renderAll();
-                showToast(`✅ 选手「${name}」已添加`);
+                showToast('✅ 选手已添加');
             } catch (e) {
-                showToast('❌ 添加失败: ' + e.message);
+                if (e.message.includes('duplicate')) showToast('⚠️ ID已存在');
+                else showToast('❌ 添加失败: ' + e.message);
             }
             showLoading(false);
         }
 
         async function deletePlayer(id) {
-            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
-            if (!isAdmin) { showToast('⚠️ 仅管理员可删除选手'); return; }
-            const player = players.find(p => p.id === id);
-            if (!player) return;
+            if (!isAdmin) { showToast('⚠️ 仅管理员可删除'); return; }
+            if (!confirm('确定删除该选手及其所有评分？')) return;
 
             showLoading(true);
             try {
@@ -1254,21 +969,30 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 players = players.filter(p => p.id !== id);
                 delete votes[id];
                 renderAll();
-                showToast(`🗑️ 选手「${player.name}」已删除`);
+                showToast('✅ 已删除');
             } catch (e) {
                 showToast('❌ 删除失败: ' + e.message);
             }
             showLoading(false);
         }
 
+        // ===== Tabs =====
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'manage') renderVoteManage();
+        }
+
         // ===== Edit Team =====
-        let editingPlayerId = null;
+        let editingTeamPlayerId = null;
 
         function showEditTeamModal(playerId) {
-            if (!isAdmin) { showToast('⚠️ 仅管理员可编辑分组'); return; }
+            if (!isAdmin) { showToast('⚠️ 仅管理员可编辑'); return; }
             const player = players.find(p => p.id === playerId);
             if (!player) return;
-            editingPlayerId = playerId;
+            editingTeamPlayerId = playerId;
             document.getElementById('editTeamPlayerName').textContent = player.name;
             document.getElementById('editTeamCurrentValue').textContent = player.team;
             document.getElementById('editTeamInput').value = '';
@@ -1278,24 +1002,23 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         function closeEditTeamModal() {
             document.getElementById('editTeamModal').classList.remove('show');
-            editingPlayerId = null;
+            editingTeamPlayerId = null;
         }
 
         async function saveEditTeam() {
-            if (!editingPlayerId) return;
+            if (!editingTeamPlayerId) return;
             const newTeam = document.getElementById('editTeamInput').value.trim();
             if (!newTeam) { showToast('⚠️ 请输入分组名称'); return; }
 
             showLoading(true);
             try {
-                // 设置标志位，跳过 Realtime 触发的重新加载
                 _skipNextPlayerRealtime = true;
-                await cloudUpdatePlayerTeam(editingPlayerId, newTeam);
-                const player = players.find(p => p.id === editingPlayerId);
+                await cloudUpdatePlayerTeam(editingTeamPlayerId, newTeam);
+                const player = players.find(p => p.id === editingTeamPlayerId);
                 if (player) player.team = newTeam;
                 closeEditTeamModal();
                 renderAll();
-                showToast(`✅ 分组已更新为「${newTeam}」`);
+                showToast('✅ 分组已更新');
             } catch (e) {
                 _skipNextPlayerRealtime = false;
                 showToast('❌ 更新失败: ' + e.message);
@@ -1305,7 +1028,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         // ===== Edit Honors =====
         let editingHonorPlayerId = null;
-        let tempHonors = []; // temporary honors list while editing
+        let tempHonors = [];
 
         function showEditHonorModal(playerId) {
             if (!isAdmin) { showToast('⚠️ 仅管理员可编辑荣誉'); return; }
@@ -1345,7 +1068,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         function renderHonorListEdit() {
             const container = document.getElementById('honorListEdit');
             if (tempHonors.length === 0) {
-                container.innerHTML = '<div style="color:#666; text-align:center; padding:12px;">暂无荣誉</div>';
+                container.innerHTML = '<div style="color:#5c3a1e; text-align:center; padding:12px;">暂无荣誉</div>';
                 return;
             }
             let html = '';
@@ -1406,6 +1129,69 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             return html;
         }
 
+        // ===== Voter (IP-based) =====
+        async function fetchVoterIP() {
+            const services = [
+                'https://api.ipify.org?format=json',
+                'https://api.my-ip.io/v2/ip.json',
+                'https://ipinfo.io/json'
+            ];
+            for (const url of services) {
+                try {
+                    const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+                    if (!resp.ok) continue;
+                    const data = await resp.json();
+                    const ip = data.ip || data.query || null;
+                    if (ip) return ip;
+                } catch (e) { continue; }
+            }
+            return 'unknown_' + Math.random().toString(36).substr(2, 8);
+        }
+
+        async function confirmVoter() {
+            if (!currentVoter) {
+                showToast('⚠️ 正在获取您的网络标识...');
+                const ip = await fetchVoterIP();
+                currentVoter = ip;
+                localStorage.setItem('current_voter', ip);
+            }
+            const ipDisplay = document.getElementById('voterIPDisplay');
+            if (ipDisplay) {
+                ipDisplay.value = maskIP(currentVoter);
+            }
+            updateVoterStatus();
+            renderAll();
+            const maskedIP = maskIP(currentVoter);
+            showToast(`✅ 已确认身份：${maskedIP}（每个IP只能投票一次，可重复编辑）`);
+        }
+
+        function maskIP(ip) {
+            if (!ip || ip.startsWith('unknown_')) return '网络标识已确认';
+            const parts = ip.split('.');
+            if (parts.length === 4) {
+                return `${parts[0]}.${parts[1]}.*.*`;
+            }
+            return ip.substring(0, 6) + '***';
+        }
+
+        function updateVoterStatus() {
+            const el = document.getElementById('voterStatus');
+            if (!currentVoter) { el.innerHTML = ''; return; }
+            let votedCount = 0;
+            players.forEach(p => {
+                if (votes[p.id] && votes[p.id][currentVoter]) votedCount++;
+            });
+            const total = players.length;
+            const maskedIP = maskIP(currentVoter);
+            if (total === 0) {
+                el.innerHTML = `<span class="voter-status not-voted">🌐 身份: ${maskedIP} · 暂无选手可评分</span>`;
+            } else if (votedCount === total) {
+                el.innerHTML = `<span class="voter-status voted">✅ 身份: ${maskedIP} · 已完成全部 ${total} 位选手的评分（可重复编辑）</span>`;
+            } else {
+                el.innerHTML = `<span class="voter-status not-voted">📝 身份: ${maskedIP} · 已评 ${votedCount}/${total} 位选手（每个IP只能投票一次，可重复编辑）</span>`;
+            }
+        }
+
         // ===== Rating =====
         function getPlayerAvg(playerId, field) {
             const v = votes[playerId] || {};
@@ -1457,7 +1243,6 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
             showLoading(true);
             try {
-                // 标记跳过 Realtime 回弹，避免自己提交后又触发一次全量刷新
                 _skipNextRealtime = true;
                 await cloudSaveVote(playerId, currentVoter, ratings);
                 if (!votes[playerId]) votes[playerId] = {};
@@ -1499,7 +1284,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (players.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
             empty.style.display = 'none';
 
-            const colors = [['#667eea','#764ba2'],['#f093fb','#f5576c'],['#4facfe','#00f2fe'],['#43e97b','#38f9d7'],['#fa709a','#fee140'],['#a18cd1','#fbc2eb']];
+            const colors = [['#8b5a2b','#5c3a1e'],['#6b4423','#3a2510'],['#a0692f','#6b4423'],['#5c3a1e','#2a1a0a'],['#c9a84c','#8b6914'],['#8b7355','#5c4a35']];
             let html = '';
 
             players.forEach((player, idx) => {
@@ -1524,23 +1309,23 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                     </div>
                     <div class="rating-section">
                         <div class="rating-row">
-                            <span class="rating-label">🎮 操作</span>
+                            <span class="rating-label">⚔️ 微操</span>
                             ${createStars(player.id, 'operation')}
                             <span class="rating-value">${getTempRating(player.id, 'operation') || '-'}</span>
                         </div>
                         <div class="rating-row">
-                            <span class="rating-label">📈 运营</span>
+                            <span class="rating-label">🏰 战术</span>
                             ${createStars(player.id, 'management')}
                             <span class="rating-value">${getTempRating(player.id, 'management') || '-'}</span>
                         </div>
                         <div class="rating-row">
-                            <span class="rating-label">💬 沟通</span>
+                            <span class="rating-label">🤝 团队</span>
                             ${createStars(player.id, 'communication')}
                             <span class="rating-value">${getTempRating(player.id, 'communication') || '-'}</span>
                         </div>
                     </div>
                     <div class="score-display">
-                        <div class="score-label">综合得分（平均）</div>
+                        <div class="score-label">综合战力（平均）</div>
                         <div class="score-value">${overall > 0 ? overall.toFixed(1) : '-'}</div>
                         <div class="vote-count">${voteCount} 人已评分${hasVoted ? ' · ✅ 你已评分' : ''}</div>
                     </div>
@@ -1581,12 +1366,12 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                         </div>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
-                        <span style="color:#aaa;font-size:0.9em;">评分人数</span>
-                        <span style="color:#ffd200;font-weight:600;">${voteCount} 人</span>
+                        <span style="color:#8b7355;font-size:0.9em;">评分人数</span>
+                        <span style="color:#c9a84c;font-weight:600;">${voteCount} 人</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
-                        <span style="color:#aaa;font-size:0.9em;">综合得分</span>
-                        <span style="color:#ffd200;font-weight:600;">${overall > 0 ? overall.toFixed(1) : '-'}</span>
+                        <span style="color:#8b7355;font-size:0.9em;">综合战力</span>
+                        <span style="color:#c9a84c;font-weight:600;">${overall > 0 ? overall.toFixed(1) : '-'}</span>
                     </div>
                     ${(editTeamBtn || editHonorBtn) ? `<div style="margin-top:12px;text-align:right;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">${editTeamBtn}${editHonorBtn}</div>` : ''}
                 </div>`;
@@ -1612,7 +1397,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
             let html = `<table class="ranking-table">
                 <thead><tr>
-                    <th>排名</th><th>选手</th><th>操作</th><th>运营</th><th>沟通</th><th>综合得分</th><th>评分人数</th>
+                    <th>排名</th><th>选手</th><th>微操</th><th>战术</th><th>团队</th><th>综合战力</th><th>评分人数</th>
                 </tr></thead><tbody>`;
 
             sorted.forEach((p, i) => {
@@ -1621,7 +1406,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 const honorHtml = (p.honors && p.honors.length > 0) ? renderHonorBadges(p.honors) : '';
                 html += `<tr>
                     <td><span class="rank-badge ${bc}">${rank}</span></td>
-                    <td><div style="font-weight:600;">${esc(p.name)}</div><div style="font-size:0.8em;color:#888;">${esc(p.team)}</div>${honorHtml}</td>
+                    <td><div style="font-weight:600;">${esc(p.name)}</div><div style="font-size:0.8em;color:#8b7355;">${esc(p.team)}</div>${honorHtml}</td>
                     <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.opAvg/10*100}%"></div></div><span class="bar-value">${p.opAvg>0?p.opAvg.toFixed(1):'-'}</span></div></td>
                     <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.mgAvg/10*100}%"></div></div><span class="bar-value">${p.mgAvg>0?p.mgAvg.toFixed(1):'-'}</span></div></td>
                     <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${p.cmAvg/10*100}%"></div></div><span class="bar-value">${p.cmAvg>0?p.cmAvg.toFixed(1):'-'}</span></div></td>
@@ -1640,15 +1425,15 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 if (voters.length > 0) {
                     hasDetails = true;
                     html += `<div style="margin-bottom:16px;">
-                        <div style="font-weight:600;margin-bottom:8px;color:#ffd200;">${esc(p.name)}</div>`;
+                        <div style="font-weight:600;margin-bottom:8px;color:#c9a84c;">${esc(p.name)}</div>`;
                     voters.forEach(([voter, scores]) => {
                         const total = ((scores.operation||0) + (scores.management||0) + (scores.communication||0)) / 3;
                         html += `<div class="history-item">
                             <span class="history-voter">${esc(voter)}</span>
                             <div class="history-scores">
-                                <span class="history-score-item">操作 <span class="val">${scores.operation||'-'}</span></span>
-                                <span class="history-score-item">运营 <span class="val">${scores.management||'-'}</span></span>
-                                <span class="history-score-item">沟通 <span class="val">${scores.communication||'-'}</span></span>
+                                <span class="history-score-item">微操 <span class="val">${scores.operation||'-'}</span></span>
+                                <span class="history-score-item">战术 <span class="val">${scores.management||'-'}</span></span>
+                                <span class="history-score-item">团队 <span class="val">${scores.communication||'-'}</span></span>
                                 <span class="history-score-item">综合 <span class="val">${total>0?total.toFixed(1):'-'}</span></span>
                             </div>
                         </div>`;
@@ -1670,8 +1455,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 return;
             }
 
-            // Collect all votes grouped by voter
-            const voterMap = {}; // voterName -> [{playerId, playerName, scores}]
+            const voterMap = {};
             players.forEach(p => {
                 const v = votes[p.id] || {};
                 Object.entries(v).forEach(([voter, scores]) => {
@@ -1685,7 +1469,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             });
 
             const voterEntries = Object.entries(voterMap).sort((a, b) => b[1].length - a[1].length);
-            
+
             if (voterEntries.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">🗳️</div><p>暂无投票记录</p></div>';
                 return;
@@ -1704,7 +1488,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                         <button class="btn-danger-sm" onclick="deleteAllVotesByVoter('${esc(voter)}')">🗑️ 清空全部</button>
                     </div>
                     <div class="voter-manage-list">`;
-                
+
                 voteList.forEach(item => {
                     const s = item.scores;
                     const avg = ((s.operation||0) + (s.management||0) + (s.communication||0)) / 3;
@@ -1712,12 +1496,12 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                         <div class="voter-manage-item">
                             <div class="voter-manage-item-info">
                                 <span class="voter-manage-player">${esc(item.playerName)}</span>
-                                <span class="voter-manage-scores">操作 ${s.operation||'-'} · 运营 ${s.management||'-'} · 沟通 ${s.communication||'-'} · 综合 ${avg>0?avg.toFixed(1):'-'}</span>
+                                <span class="voter-manage-scores">微操 ${s.operation||'-'} · 战术 ${s.management||'-'} · 团队 ${s.communication||'-'} · 综合 ${avg>0?avg.toFixed(1):'-'}</span>
                             </div>
                             <button class="btn-delete-sm" onclick="deleteVote('${item.playerId}', '${esc(voter)}')">删除</button>
                         </div>`;
                 });
-                
+
                 html += `</div></div>`;
             });
 
@@ -1732,7 +1516,6 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             showLoading(true);
             try {
                 await cloudDeleteVote(playerId, voterName);
-                // Update local state
                 if (votes[playerId] && votes[playerId][voterName]) {
                     delete votes[playerId][voterName];
                 }
@@ -1753,7 +1536,6 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             showLoading(true);
             try {
                 await cloudDeleteVotesByVoter(voterName);
-                // Update local state
                 Object.keys(votes).forEach(pid => {
                     if (votes[pid][voterName]) delete votes[pid][voterName];
                 });
@@ -1780,11 +1562,20 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             const input = document.getElementById('shareUrl');
             input.select();
             navigator.clipboard.writeText(input.value).then(() => {
-                showToast('✅ 链接已复制，发给微信好友吧！');
+                showToast('✅ 链接已复制，发给战友吧！');
             }).catch(() => {
                 document.execCommand('copy');
                 showToast('✅ 链接已复制！');
             });
+        }
+
+        function updateShareUrl() {
+            const url = window.location.href.split('?')[0];
+            document.getElementById('shareUrl').value = url;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
         }
 
         function showResetModal() { document.getElementById('resetModal').classList.add('show'); }
@@ -1814,7 +1605,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             }
         });
 
-        // Auto-refresh every 30 seconds to sync with other voters
+        // Auto-refresh every 30 seconds
         setInterval(() => {
             if (cloudReady) loadAllData();
         }, 30000);
@@ -1822,14 +1613,13 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         // Init
         initCloud();
 
-        // Auto-fetch IP for voter identity (runs in background)
+        // Auto-fetch IP for voter identity
         (async () => {
             if (!currentVoter) {
                 const ip = await fetchVoterIP();
                 currentVoter = ip;
                 localStorage.setItem('current_voter', ip);
             }
-            // Update the IP display
             const ipDisplay = document.getElementById('voterIPDisplay');
             if (ipDisplay) {
                 ipDisplay.value = maskIP(currentVoter);
