@@ -599,6 +599,7 @@
             <span id="connStatus">未连接</span>
             <button class="conn-btn" onclick="toggleConfig()">⚙️ 配置</button>
             <button class="conn-btn" onclick="showResetModal()">🗑️ 重置</button>
+            <button class="conn-btn" id="adminLoginBtn" onclick="showAdminLogin()">🔑 管理员登录</button>
         </div>
 
         <!-- Config Panel -->
@@ -789,6 +790,21 @@
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
+    <div class="reset-overlay" id="adminLoginModal">
+        <div class="reset-modal" style="border-color: rgba(201,168,76,0.5);">
+            <h3 style="color:#ffd700;">🔑 管理员登录</h3>
+            <p style="color:#8b7355; margin-bottom:16px;">请输入管理员密钥以获得管理权限</p>
+            <div class="form-group" style="margin-bottom:16px;">
+                <input type="password" id="adminKeyInput" placeholder="管理员密钥" style="width:100%; padding:10px 14px; border:1px solid rgba(139,90,43,0.4); background:rgba(20,12,5,0.8); color:#d4c5a0; border-radius:4px; font-size:0.95em; outline:none;" />
+            </div>
+            <div class="reset-modal-actions">
+                <button class="btn btn-ghost" onclick="closeAdminLogin()">取消</button>
+                <button class="btn btn-primary" onclick="doAdminLogin()">登录</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ===== State =====
         let sbClient = null;
@@ -803,6 +819,54 @@
         let tempRatings = {}; // { playerId: { operation, management, communication } }
         let _skipNextRealtime = false;
         let _skipNextPlayerRealtime = false;
+
+        // ===== Admin =====
+        function updateAdminUI() {
+            const btn = document.getElementById('adminLoginBtn');
+            const addSection = document.querySelector('.add-section');
+            if (isAdmin) {
+                btn.textContent = '🔓 退出管理员';
+                btn.style.borderColor = 'rgba(201,168,76,0.6)';
+                btn.style.color = '#ffd700';
+                if (addSection) addSection.style.display = '';
+            } else {
+                btn.textContent = '🔑 管理员登录';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+                if (addSection) addSection.style.display = 'none';
+            }
+        }
+
+        function showAdminLogin() {
+            if (isAdmin) {
+                // Logout
+                isAdmin = false;
+                localStorage.removeItem('admin_key');
+                updateAdminUI();
+                showToast('✅ 已退出管理员模式');
+                return;
+            }
+            document.getElementById('adminKeyInput').value = '';
+            document.getElementById('adminLoginModal').classList.add('show');
+            setTimeout(() => document.getElementById('adminKeyInput').focus(), 100);
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLoginModal').classList.remove('show');
+        }
+
+        function doAdminLogin() {
+            const key = document.getElementById('adminKeyInput').value.trim();
+            if (key === 'wc3admin') {
+                isAdmin = true;
+                localStorage.setItem('admin_key', key);
+                closeAdminLogin();
+                updateAdminUI();
+                showToast('✅ 管理员登录成功');
+            } else {
+                showToast('⚠️ 密钥错误');
+            }
+        }
 
         // ===== Cloud =====
         function toggleConfig() {
@@ -852,6 +916,7 @@
                 // Check admin
                 const adminKey = localStorage.getItem('admin_key');
                 isAdmin = adminKey === 'wc3admin';
+                updateAdminUI();
 
                 // Subscribe to realtime
                 sbClient.channel('players')
@@ -972,6 +1037,7 @@
 
         // ===== Players =====
         async function addPlayer() {
+            if (!isAdmin) { showToast('⚠️ 仅管理员可添加选手'); return; }
             if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
             const id = document.getElementById('playerId').value.trim();
             const name = document.getElementById('playerName').value.trim();
@@ -1644,6 +1710,11 @@
         setInterval(() => {
             if (cloudReady) loadAllData();
         }, 30000);
+
+        // Admin login Enter key
+        document.getElementById('adminKeyInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doAdminLogin();
+        });
 
         // Init
         initCloud();
