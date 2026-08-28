@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚔️ 魔兽争霸3 · 选手评分系统</title>
+    <title>⚔️ 魔兽双随4V4永动机选手评分</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
     <style>
@@ -11,25 +11,59 @@
 
         body {
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: 
-                radial-gradient(ellipse at top, rgba(40,20,0,0.8) 0%, transparent 50%),
-                radial-gradient(ellipse at bottom, rgba(20,10,0,0.8) 0%, transparent 50%),
+            background:
+                url('https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&q=80') center/cover no-repeat fixed,
+                radial-gradient(ellipse at top, rgba(40,20,0,0.85) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(20,10,0,0.85) 0%, transparent 50%),
                 linear-gradient(180deg, #0a0605 0%, #1a0f08 30%, #0d0805 70%, #050302 100%);
             min-height: 100vh;
             color: #d4c5a0;
             position: relative;
         }
 
-        /* Subtle texture overlay */
+        /* Background atmosphere - Warcraft themed */
         body::before {
             content: '';
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-image: 
+            background-image:
+                /* Rune circle pattern */
+                radial-gradient(circle at 20% 30%, rgba(201,168,76,0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(139,90,43,0.1) 0%, transparent 40%),
+                /* Magical glow spots */
+                radial-gradient(circle at 10% 80%, rgba(255,100,0,0.05) 0%, transparent 30%),
+                radial-gradient(circle at 90% 20%, rgba(100,200,255,0.04) 0%, transparent 30%),
+                /* Texture overlay */
                 repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,90,43,0.03) 2px, rgba(139,90,43,0.03) 4px),
                 repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139,90,43,0.02) 2px, rgba(139,90,43,0.02) 4px);
             pointer-events: none;
             z-index: 0;
+        }
+
+        /* Floating magical particles */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(2px 2px at 15% 25%, rgba(255,215,0,0.4) 50%, transparent 50%),
+                radial-gradient(2px 2px at 35% 65%, rgba(201,168,76,0.3) 50%, transparent 50%),
+                radial-gradient(2px 2px at 55% 15%, rgba(255,180,0,0.35) 50%, transparent 50%),
+                radial-gradient(2px 2px at 75% 85%, rgba(139,90,43,0.4) 50%, transparent 50%),
+                radial-gradient(2px 2px at 85% 45%, rgba(255,215,0,0.3) 50%, transparent 50%),
+                radial-gradient(2px 2px at 25% 75%, rgba(201,168,76,0.35) 50%, transparent 50%),
+                radial-gradient(2px 2px at 65% 35%, rgba(255,180,0,0.3) 50%, transparent 50%),
+                radial-gradient(2px 2px at 45% 55%, rgba(139,90,43,0.35) 50%, transparent 50%);
+            animation: floatParticles 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        @keyframes floatParticles {
+            0% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-20px) translateX(10px); }
+            100% { transform: translateY(0) translateX(0); }
         }
 
         .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; position: relative; z-index: 1; }
@@ -61,9 +95,9 @@
             letter-spacing: 4px;
             margin-bottom: 8px;
         }
-        .header p { 
-            color: #8b7355; 
-            font-size: 1em; 
+        .header p {
+            color: #8b7355;
+            font-size: 1em;
             font-style: italic;
             letter-spacing: 2px;
         }
@@ -88,24 +122,24 @@
         /* Tabs - WC3 Style */
         .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
         .tab-btn {
-            padding: 10px 28px; 
+            padding: 10px 28px;
             border: 2px solid rgba(139,90,43,0.4);
             background: linear-gradient(180deg, rgba(40,25,10,0.8) 0%, rgba(20,12,5,0.9) 100%);
             color: #8b7355;
-            border-radius: 4px; 
+            border-radius: 4px;
             cursor: pointer; font-size: 1em; transition: all 0.3s;
             font-family: 'Cinzel', serif;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-        .tab-btn:hover { 
+        .tab-btn:hover {
             background: linear-gradient(180deg, rgba(60,35,15,0.9) 0%, rgba(30,18,8,0.95) 100%);
-            color: #c9a84c; 
+            color: #c9a84c;
             border-color: #8b5a2b;
         }
         .tab-btn.active {
             background: linear-gradient(180deg, #8b5a2b 0%, #5c3a1e 100%);
-            color: #ffd700; 
+            color: #ffd700;
             border-color: #c9a84c;
             box-shadow: 0 0 15px rgba(201,168,76,0.3), inset 0 1px 0 rgba(255,215,0,0.2);
         }
@@ -140,17 +174,17 @@
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 0.85em; color: #8b7355; }
         .form-group input, .form-group select {
-            padding: 10px 14px; 
+            padding: 10px 14px;
             border: 1px solid rgba(139,90,43,0.4);
-            background: rgba(20,12,5,0.8); 
+            background: rgba(20,12,5,0.8);
             color: #d4c5a0;
-            border-radius: 4px; 
-            font-size: 0.95em; 
-            outline: none; 
+            border-radius: 4px;
+            font-size: 0.95em;
+            outline: none;
             transition: border-color 0.3s;
         }
-        .form-group input:focus, .form-group select:focus { 
-            border-color: #c9a84c; 
+        .form-group input:focus, .form-group select:focus {
+            border-color: #c9a84c;
             box-shadow: 0 0 8px rgba(201,168,76,0.2);
         }
         .form-group select option { background: #1a0f08; color: #d4c5a0; }
@@ -161,13 +195,13 @@
             font-family: 'Cinzel', serif;
             letter-spacing: 1px;
         }
-        .btn-primary { 
-            background: linear-gradient(180deg, #c9a84c 0%, #8b6914 100%); 
+        .btn-primary {
+            background: linear-gradient(180deg, #c9a84c 0%, #8b6914 100%);
             color: #1a0f08;
             box-shadow: 0 2px 8px rgba(139,105,20,0.4), inset 0 1px 0 rgba(255,215,0,0.3);
         }
-        .btn-primary:hover { 
-            transform: translateY(-2px); 
+        .btn-primary:hover {
+            transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(201,168,76,0.5), inset 0 1px 0 rgba(255,215,0,0.4);
         }
         .btn-danger { background: rgba(139,30,30,0.4); color: #ff6b6b; border: 1px solid rgba(139,30,30,0.5); }
@@ -196,12 +230,12 @@
         }
         .player-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0;
-            height: 3px; 
+            height: 3px;
             background: linear-gradient(90deg, transparent, #8b5a2b, #c9a84c, #8b5a2b, transparent);
             opacity: 0.6; transition: opacity 0.3s;
         }
         .player-card:hover {
-            transform: translateY(-4px); 
+            transform: translateY(-4px);
             box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(139,90,43,0.2);
             border-color: rgba(201,168,76,0.4);
         }
@@ -235,12 +269,12 @@
             flex-wrap: nowrap;
         }
         .rating-row:last-child { border-bottom: none; }
-        .rating-label { 
-            font-size: 0.9em; color: #c9a84c; min-width: 70px; 
+        .rating-label {
+            font-size: 0.9em; color: #c9a84c; min-width: 70px;
             font-family: 'Cinzel', serif;
         }
-        .rating-stars { 
-            display: flex; gap: 2px; 
+        .rating-stars {
+            display: flex; gap: 2px;
             flex-shrink: 0;
             min-width: 0;
         }
@@ -279,8 +313,8 @@
             letter-spacing: 1px;
             box-shadow: 0 2px 8px rgba(139,90,43,0.4), inset 0 1px 0 rgba(255,215,0,0.2);
         }
-        .btn-vote:hover { 
-            transform: translateY(-2px); 
+        .btn-vote:hover {
+            transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(139,90,43,0.5), inset 0 1px 0 rgba(255,215,0,0.3);
             background: linear-gradient(180deg, #a0692f 0%, #6b4423 100%);
         }
@@ -364,8 +398,8 @@
         }
         .edit-team-modal h3 { color: #c9a84c; font-size: 1.3em; margin-bottom: 8px; font-family: 'Cinzel', serif; }
         .edit-team-modal .edit-team-desc { color: #8b7355; font-size: 0.9em; margin-bottom: 16px; }
-        .edit-team-modal .current-team { 
-            background: rgba(139,90,43,0.15); padding: 10px 14px; border-radius: 4px; 
+        .edit-team-modal .current-team {
+            background: rgba(139,90,43,0.15); padding: 10px 14px; border-radius: 4px;
             margin-bottom: 16px; color: #c9a84c; font-size: 0.9em;
             border: 1px solid rgba(139,90,43,0.3);
         }
@@ -554,7 +588,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>⚔️ 魔兽争霸3 · 选手评分</h1>
+            <h1>⚔️ 魔兽双随4V4永动机选手评分</h1>
             <p>— 荣耀属于最强战士 —</p>
         </div>
 
@@ -718,7 +752,7 @@
         <div class="edit-honor-modal">
             <h3>🏆 编辑荣誉</h3>
             <p class="edit-honor-desc">为选手 <strong id="editHonorPlayerName" style="color:#ffd700;"></strong> 添加或管理荣誉</p>
-            
+
             <div class="honor-add-row">
                 <div class="form-group">
                     <label>比赛名称</label>
