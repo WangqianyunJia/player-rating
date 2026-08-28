@@ -622,15 +622,15 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             </div>
         </div>
 
-        <!-- Voter Identity -->
+        <!-- Voter Identity (IP-based) -->
         <div class="voter-section">
             <h2>👤 投票人身份</h2>
             <div class="voter-input-row">
                 <div class="form-group" style="flex:1; min-width: 200px;">
-                    <label>请输入您的姓名</label>
-                    <input type="text" id="voterName" placeholder="输入姓名后开始评分..." />
+                    <label>系统将通过您的网络IP识别身份（每个IP只能投票一次，可重复编辑）</label>
+                    <input type="text" id="voterIPDisplay" readonly placeholder="正在获取您的网络标识..." style="background:rgba(255,255,255,0.04); cursor:default;" />
                 </div>
-                <button class="btn btn-primary" onclick="confirmVoter()">确认身份</button>
+                <button class="btn btn-primary" onclick="confirmVoter()" id="btnConfirmVoter">确认身份</button>
             </div>
             <div id="voterStatus"></div>
         </div>
@@ -1136,15 +1136,56 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 });
         }
 
-        // ===== Voter =====
-        function confirmVoter() {
-            const name = document.getElementById('voterName').value.trim();
-            if (!name) { showToast('⚠️ 请输入您的姓名'); return; }
-            currentVoter = name;
-            localStorage.setItem('current_voter', name);
+        // ===== Voter (IP-based) =====
+        async function fetchVoterIP() {
+            // Try multiple IP services for reliability
+            const services = [
+                'https://api.ipify.org?format=json',
+                'https://api.my-ip.io/v2/ip.json',
+                'https://ipinfo.io/json'
+            ];
+            for (const url of services) {
+                try {
+                    const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+                    if (!resp.ok) continue;
+                    const data = await resp.json();
+                    // Different services return IP in different fields
+                    const ip = data.ip || data.query || null;
+                    if (ip) return ip;
+                } catch (e) { continue; }
+            }
+            // Fallback: generate a random ID if all services fail
+            return 'unknown_' + Math.random().toString(36).substr(2, 8);
+        }
+
+        async function confirmVoter() {
+            if (!currentVoter) {
+                showToast('⚠️ 正在获取您的网络标识...');
+                const ip = await fetchVoterIP();
+                currentVoter = ip;
+                localStorage.setItem('current_voter', ip);
+            }
+            // Update the IP display
+            const ipDisplay = document.getElementById('voterIPDisplay');
+            if (ipDisplay) {
+                ipDisplay.value = maskIP(currentVoter);
+            }
             updateVoterStatus();
             renderAll();
-            showToast(`✅ 欢迎，${name}！`);
+            // Mask IP for privacy display
+            const maskedIP = maskIP(currentVoter);
+            showToast(`✅ 已确认身份：${maskedIP}（每个IP只能投票一次，可重复编辑）`);
+        }
+
+        function maskIP(ip) {
+            // Mask middle parts of IP for privacy: 1.2.3.4 -> 1.2.*.*
+            if (!ip || ip.startsWith('unknown_')) return '网络标识已确认';
+            const parts = ip.split('.');
+            if (parts.length === 4) {
+                return `${parts[0]}.${parts[1]}.*.*`;
+            }
+            // IPv6 or other format: show first 6 chars
+            return ip.substring(0, 6) + '***';
         }
 
         function updateVoterStatus() {
@@ -1155,12 +1196,13 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 if (votes[p.id] && votes[p.id][currentVoter]) votedCount++;
             });
             const total = players.length;
+            const maskedIP = maskIP(currentVoter);
             if (total === 0) {
-                el.innerHTML = `<span class="voter-status not-voted">暂无选手可评分</span>`;
+                el.innerHTML = `<span class="voter-status not-voted">🌐 身份: ${maskedIP} · 暂无选手可评分</span>`;
             } else if (votedCount === total) {
-                el.innerHTML = `<span class="voter-status voted">✅ 已完成全部 ${total} 位选手的评分</span>`;
+                el.innerHTML = `<span class="voter-status voted">✅ 身份: ${maskedIP} · 已完成全部 ${total} 位选手的评分（可重复编辑）</span>`;
             } else {
-                el.innerHTML = `<span class="voter-status not-voted">📝 已评 ${votedCount}/${total} 位选手</span>`;
+                el.innerHTML = `<span class="voter-status not-voted">📝 身份: ${maskedIP} · 已评 ${votedCount}/${total} 位选手（每个IP只能投票一次，可重复编辑）</span>`;
             }
         }
 
@@ -1779,6 +1821,22 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
 
         // Init
         initCloud();
+
+        // Auto-fetch IP for voter identity (runs in background)
+        (async () => {
+            if (!currentVoter) {
+                const ip = await fetchVoterIP();
+                currentVoter = ip;
+                localStorage.setItem('current_voter', ip);
+            }
+            // Update the IP display
+            const ipDisplay = document.getElementById('voterIPDisplay');
+            if (ipDisplay) {
+                ipDisplay.value = maskIP(currentVoter);
+            }
+            updateVoterStatus();
+            renderAll();
+        })();
     </script>
 </body>
 </html>
