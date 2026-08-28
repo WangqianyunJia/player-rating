@@ -308,6 +308,49 @@
             border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
         }
         .btn-delete-sm:hover { background: rgba(255,152,0,0.2); }
+        .btn-edit-sm {
+            background: rgba(79,172,254,0.1); color: #4facfe;
+            border: 1px solid rgba(79,172,254,0.2); padding: 4px 10px;
+            border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
+        }
+        .btn-edit-sm:hover { background: rgba(79,172,254,0.2); }
+
+        /* Edit Team Modal */
+        .edit-team-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 3000;
+            align-items: center; justify-content: center; backdrop-filter: blur(6px);
+        }
+        .edit-team-overlay.show { display: flex; }
+        .edit-team-modal {
+            background: #1e1e3a; border: 1px solid rgba(79,172,254,0.2);
+            border-radius: 20px; padding: 36px; max-width: 380px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .edit-team-modal h3 {
+            color: #4facfe; font-size: 1.3em; margin-bottom: 8px; text-align: center;
+        }
+        .edit-team-modal .edit-team-desc {
+            color: #aaa; font-size: 0.9em; margin-bottom: 20px; text-align: center;
+        }
+        .edit-team-modal .current-team {
+            background: rgba(79,172,254,0.08); border: 1px solid rgba(79,172,254,0.15);
+            border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+            font-size: 0.9em; color: #4facfe; text-align: center;
+        }
+        .edit-team-modal .form-group { margin-bottom: 14px; }
+        .edit-team-modal .form-group label { color: #ccc; }
+        .edit-team-modal .form-group input {
+            width: 100%; padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06); color: #fff;
+            border-radius: 10px; font-size: 0.95em; outline: none;
+        }
+        .edit-team-modal .form-group input:focus { border-color: #4facfe; }
+        .edit-team-modal-actions {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+        .edit-team-modal-actions .btn { flex: 1; text-align: center; }
 
         /* Admin Bar */
         .admin-bar {
@@ -480,6 +523,7 @@ ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "允许所有人读取选手" ON players FOR SELECT USING (true);
 CREATE POLICY "允许所有人创建选手" ON players FOR INSERT WITH CHECK (true);
+CREATE POLICY "允许所有人更新选手" ON players FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "允许所有人删除选手" ON players FOR DELETE USING (true);
 
 CREATE POLICY "允许所有人读取投票" ON votes FOR SELECT USING (true);
@@ -618,6 +662,23 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             <div class="modal-actions">
                 <button class="btn btn-ghost" onclick="closeAdminLogin()">取消</button>
                 <button class="btn btn-primary" onclick="doAdminLogin()">登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Team Modal -->
+    <div class="edit-team-overlay" id="editTeamModal">
+        <div class="edit-team-modal">
+            <h3>🏷️ 编辑分组</h3>
+            <p class="edit-team-desc">修改选手 <strong id="editTeamPlayerName" style="color:#ffd200;"></strong> 的分组</p>
+            <div class="current-team">当前分组：<span id="editTeamCurrentValue">未分组</span></div>
+            <div class="form-group">
+                <label>新分组名称</label>
+                <input type="text" id="editTeamInput" placeholder="输入新的分组名称" />
+            </div>
+            <div class="edit-team-modal-actions">
+                <button class="btn btn-ghost" onclick="closeEditTeamModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveEditTeam()" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">保存</button>
             </div>
         </div>
     </div>
@@ -886,6 +947,11 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (pErr) throw pErr;
         }
 
+        async function cloudUpdatePlayerTeam(playerId, newTeam) {
+            const { error } = await sbClient.from('players').update({ team: newTeam }).eq('id', playerId);
+            if (error) throw error;
+        }
+
         async function cloudSaveVote(playerId, voterName, scores) {
             // Use upsert - this will insert or update if exists
             const { error } = await sbClient.from('votes').upsert({
@@ -1023,6 +1089,45 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 showToast(`🗑️ 选手「${player.name}」已删除`);
             } catch (e) {
                 showToast('❌ 删除失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        // ===== Edit Team =====
+        let editingPlayerId = null;
+
+        function showEditTeamModal(playerId) {
+            if (!isAdmin) { showToast('⚠️ 仅管理员可编辑分组'); return; }
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            editingPlayerId = playerId;
+            document.getElementById('editTeamPlayerName').textContent = player.name;
+            document.getElementById('editTeamCurrentValue').textContent = player.team;
+            document.getElementById('editTeamInput').value = '';
+            document.getElementById('editTeamModal').classList.add('show');
+            setTimeout(() => document.getElementById('editTeamInput').focus(), 100);
+        }
+
+        function closeEditTeamModal() {
+            document.getElementById('editTeamModal').classList.remove('show');
+            editingPlayerId = null;
+        }
+
+        async function saveEditTeam() {
+            if (!editingPlayerId) return;
+            const newTeam = document.getElementById('editTeamInput').value.trim();
+            if (!newTeam) { showToast('⚠️ 请输入分组名称'); return; }
+
+            showLoading(true);
+            try {
+                await cloudUpdatePlayerTeam(editingPlayerId, newTeam);
+                const player = players.find(p => p.id === editingPlayerId);
+                if (player) player.team = newTeam;
+                closeEditTeamModal();
+                renderAll();
+                showToast(`✅ 分组已更新为「${newTeam}」`);
+            } catch (e) {
+                showToast('❌ 更新失败: ' + e.message);
             }
             showLoading(false);
         }
@@ -1185,6 +1290,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                 const overall = getPlayerOverall(player.id);
                 const initial = player.name.charAt(0).toUpperCase();
                 const deleteBtn = isAdmin ? `<button class="player-delete" onclick="deletePlayer('${player.id}')" title="删除选手">×</button>` : '';
+                const editTeamBtn = isAdmin ? `<button class="btn-edit-sm" onclick="showEditTeamModal('${player.id}')">🏷️ 编辑分组</button>` : '';
                 html += `
                 <div class="player-card">
                     ${deleteBtn}
@@ -1205,6 +1311,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
                         <span style="color:#aaa;font-size:0.9em;">综合得分</span>
                         <span style="color:#ffd200;font-weight:600;">${overall > 0 ? overall.toFixed(1) : '-'}</span>
                     </div>
+                    ${editTeamBtn ? `<div style="margin-top:12px;text-align:right;">${editTeamBtn}</div>` : ''}
                 </div>`;
             });
             container.innerHTML = html;
