@@ -987,6 +987,10 @@
         }
 
         // ===== Cloud =====
+        // 硬编码的Supabase配置（所有人共享同一数据库）
+        const DEFAULT_SB_URL = 'https://izbneofkiorssrrlenla.supabase.co';
+        const DEFAULT_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6Ym5lb2ZraW9yc3NycmxlbmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTU4NDEsImV4cCI6MjEwMzQ3MTg0MX0.cgTrA8pReT4sOzCMfqW--F9gMYpHZxeHZFybfVOMz2U';
+
         function toggleConfig() {
             const p = document.getElementById('configPanel');
             p.style.display = p.style.display === 'none' ? 'block' : 'none';
@@ -1003,8 +1007,9 @@
         }
 
         function loadConfig() {
-            const url = localStorage.getItem('sb_url');
-            const key = localStorage.getItem('sb_key');
+            // 优先使用localStorage，如果没有则使用硬编码的默认配置
+            let url = localStorage.getItem('sb_url') || DEFAULT_SB_URL;
+            let key = localStorage.getItem('sb_key') || DEFAULT_SB_KEY;
             if (url) document.getElementById('sbUrl').value = url;
             if (key) document.getElementById('sbKey').value = key;
             return { url, key };
