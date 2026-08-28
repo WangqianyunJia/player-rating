@@ -276,6 +276,39 @@
         }
         .btn-reset:hover { background: rgba(255,82,82,0.2); }
 
+        /* Vote Management */
+        .voter-manage-card {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 24px; margin-bottom: 16px;
+        }
+        .voter-manage-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .voter-manage-info { display: flex; align-items: center; gap: 12px; }
+        .voter-manage-name { font-size: 1.1em; font-weight: 600; color: #ffd200; }
+        .voter-manage-count { font-size: 0.85em; color: #aaa; }
+        .voter-manage-list { display: flex; flex-direction: column; gap: 8px; }
+        .voter-manage-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: rgba(255,255,255,0.04); border-radius: 10px;
+        }
+        .voter-manage-item-info { display: flex; flex-direction: column; gap: 4px; }
+        .voter-manage-player { font-weight: 600; color: #fff; }
+        .voter-manage-scores { font-size: 0.8em; color: #aaa; }
+        .btn-danger-sm {
+            background: rgba(255,82,82,0.1); color: #ff5252;
+            border: 1px solid rgba(255,82,82,0.2); padding: 6px 12px;
+            border-radius: 6px; cursor: pointer; font-size: 0.8em; transition: all 0.3s;
+        }
+        .btn-danger-sm:hover { background: rgba(255,82,82,0.2); }
+        .btn-delete-sm {
+            background: rgba(255,152,0,0.1); color: #ff9800;
+            border: 1px solid rgba(255,152,0,0.2); padding: 4px 10px;
+            border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: all 0.3s;
+        }
+        .btn-delete-sm:hover { background: rgba(255,152,0,0.2); }
+
         /* Loading */
         .loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -438,6 +471,7 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             <button class="tab-btn active" onclick="switchTab('vote')">📝 评分投票</button>
             <button class="tab-btn" onclick="switchTab('ranking')">📊 排行榜</button>
             <button class="tab-btn" onclick="switchTab('manage')">⚙️ 管理选手</button>
+            <button class="tab-btn" onclick="switchTab('voteManage')">🗑️ 管理投票</button>
         </div>
 
         <!-- Tab: Vote -->
@@ -480,6 +514,15 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             </div>
             <div class="reset-section">
                 <button class="btn-reset" onclick="showResetModal()">🗑️ 重置所有数据</button>
+            </div>
+        </div>
+
+        <!-- Tab: Vote Manage -->
+        <div class="tab-panel" id="panel-voteManage">
+            <div class="ranking-section">
+                <h2>🗑️ 管理投票</h2>
+                <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">查看所有投票记录，点击「删除」移除单条投票，或点击「清空」移除某人的所有投票。</p>
+                <div id="voteManageContent"></div>
             </div>
         </div>
     </div>
@@ -682,6 +725,19 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (pErr) throw pErr;
         }
 
+        async function cloudDeleteVote(playerId, voterName) {
+            const { error } = await sbClient.from('votes').delete()
+                .eq('player_id', playerId)
+                .eq('voter_name', voterName);
+            if (error) throw error;
+        }
+
+        async function cloudDeleteVotesByVoter(voterName) {
+            const { error } = await sbClient.from('votes').delete()
+                .eq('voter_name', voterName);
+            if (error) throw error;
+        }
+
         // ===== Realtime Subscription =====
         function subscribeToChanges() {
             if (!sbClient) return;
@@ -739,11 +795,12 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
         // ===== Tabs =====
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', ['vote', 'ranking', 'manage'][i] === tab);
+                btn.classList.toggle('active', ['vote', 'ranking', 'manage', 'voteManage'][i] === tab);
             });
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('panel-' + tab).classList.add('active');
             if (tab === 'ranking') renderRanking();
+            if (tab === 'voteManage') renderVoteManage();
         }
 
         // ===== Players =====
@@ -1033,6 +1090,104 @@ CREATE POLICY "允许所有人删除投票" ON votes FOR DELETE USING (true);
             if (!hasDetails) html += '<div class="empty-state" style="padding:20px;"><p>暂无评分记录</p></div>';
             html += '</div>';
             container.innerHTML = html;
+        }
+
+        // ===== Vote Management =====
+        function renderVoteManage() {
+            const container = document.getElementById('voteManageContent');
+            
+            // Collect all votes grouped by voter
+            const voterMap = {}; // voterName -> [{playerId, playerName, scores}]
+            players.forEach(p => {
+                const v = votes[p.id] || {};
+                Object.entries(v).forEach(([voter, scores]) => {
+                    if (!voterMap[voter]) voterMap[voter] = [];
+                    voterMap[voter].push({
+                        playerId: p.id,
+                        playerName: p.name,
+                        scores: scores
+                    });
+                });
+            });
+
+            const voterEntries = Object.entries(voterMap).sort((a, b) => b[1].length - a[1].length);
+            
+            if (voterEntries.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">🗳️</div><p>暂无投票记录</p></div>';
+                return;
+            }
+
+            let html = '';
+            voterEntries.forEach(([voter, voteList]) => {
+                const totalVotes = voteList.length;
+                html += `
+                <div class="voter-manage-card">
+                    <div class="voter-manage-header">
+                        <div class="voter-manage-info">
+                            <span class="voter-manage-name">${esc(voter)}</span>
+                            <span class="voter-manage-count">共 ${totalVotes} 条投票</span>
+                        </div>
+                        <button class="btn-danger-sm" onclick="deleteAllVotesByVoter('${esc(voter)}')">🗑️ 清空全部</button>
+                    </div>
+                    <div class="voter-manage-list">`;
+                
+                voteList.forEach(item => {
+                    const s = item.scores;
+                    const avg = ((s.operation||0) + (s.management||0) + (s.communication||0)) / 3;
+                    html += `
+                        <div class="voter-manage-item">
+                            <div class="voter-manage-item-info">
+                                <span class="voter-manage-player">${esc(item.playerName)}</span>
+                                <span class="voter-manage-scores">操作 ${s.operation||'-'} · 运营 ${s.management||'-'} · 沟通 ${s.communication||'-'} · 综合 ${avg>0?avg.toFixed(1):'-'}</span>
+                            </div>
+                            <button class="btn-delete-sm" onclick="deleteVote('${item.playerId}', '${esc(voter)}')">删除</button>
+                        </div>`;
+                });
+                
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function deleteVote(playerId, voterName) {
+            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!confirm(`确定删除「${voterName}」对选手的评分吗？`)) return;
+
+            showLoading(true);
+            try {
+                await cloudDeleteVote(playerId, voterName);
+                // Update local state
+                if (votes[playerId] && votes[playerId][voterName]) {
+                    delete votes[playerId][voterName];
+                }
+                renderVoteManage();
+                renderAll();
+                showToast('✅ 已删除该评分');
+            } catch (e) {
+                showToast('❌ 删除失败: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        async function deleteAllVotesByVoter(voterName) {
+            if (!cloudReady) { showToast('⚠️ 请先配置云端连接'); return; }
+            if (!confirm(`确定清空「${voterName}」的所有评分吗？此操作不可恢复！`)) return;
+
+            showLoading(true);
+            try {
+                await cloudDeleteVotesByVoter(voterName);
+                // Update local state
+                Object.keys(votes).forEach(pid => {
+                    if (votes[pid][voterName]) delete votes[pid][voterName];
+                });
+                renderVoteManage();
+                renderAll();
+                showToast(`✅ 已清空「${voterName}」的所有评分`);
+            } catch (e) {
+                showToast('❌ 删除失败: ' + e.message);
+            }
+            showLoading(false);
         }
 
         // ===== Utils =====
