@@ -1072,17 +1072,28 @@
             }
         }
 
+        // IP -> 自定义ID 映射表
+        let voterIdMap = {};
+
         async function loadAllData() {
             if (!cloudReady) return;
 
             try {
-                const [playerRes, voteRes] = await Promise.all([
+                const [playerRes, voteRes, voterMapRes] = await Promise.all([
                     sbClient.from('players').select('*').order('created_at', { ascending: true }),
-                    sbClient.from('votes').select('*')
+                    sbClient.from('votes').select('*'),
+                    sbClient.from('voter_ids').select('*')
                 ]);
 
                 if (playerRes.error) throw playerRes.error;
                 if (voteRes.error) throw voteRes.error;
+                // voter_ids 表可能不存在，忽略错误
+                if (voterMapRes.data) {
+                    voterIdMap = {};
+                    voterMapRes.data.forEach(v => {
+                        voterIdMap[v.ip] = v.display_name;
+                    });
+                }
 
                 players = (playerRes.data || []).map(p => {
                     let honors = [];
@@ -1163,6 +1174,35 @@
         async function cloudUpdatePlayerHonors(playerId, honors) {
             const { error } = await sbClient.from('players').update({ honors: JSON.stringify(honors) }).eq('id', playerId);
             if (error) throw error;
+        }
+
+        // 保存 IP -> 自定义ID 映射
+        async function cloudSaveVoterId(ip, displayName) {
+            try {
+                const { error } = await sbClient.from('voter_ids').upsert({
+                    ip: ip,
+                    display_name: displayName
+                }, { onConflict: 'ip' });
+                if (error) {
+                    console.warn('保存投票人ID映射失败（voter_ids表可能不存在）:', error.message);
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.warn('保存投票人ID映射失败:', e.message);
+                return false;
+            }
+        }
+
+        // 获取显示名称（如果有映射则用映射，否则显示IP的脱敏版本）
+        function getVoterDisplayName(ip) {
+            if (voterIdMap[ip]) return voterIdMap[ip];
+            // 如果没有映射，显示脱敏的IP
+            const parts = ip.split('.');
+            if (parts.length === 4) {
+                return `${parts[0]}.${parts[1]}.*.*`;
+            }
+            return ip.substring(0, 6) + '***';
         }
 
         // ===== Players =====
@@ -1414,6 +1454,10 @@
             currentVoter = voterIP; // 投票记录仍然用IP作为key
             localStorage.setItem('voter_custom_id', customId);
             localStorage.setItem('current_voter', voterIP);
+
+            // 保存 IP -> 自定义ID 映射到数据库
+            await cloudSaveVoterId(voterIP, customId);
+            voterIdMap[voterIP] = customId; // 同时更新本地映射
 
             updateVoterStatus();
             renderAll();
@@ -1674,8 +1718,9 @@
                         <div style="font-weight:600;margin-bottom:8px;color:#c9a84c;">${esc(p.name)}</div>`;
                     voters.forEach(([voter, scores]) => {
                         const total = ((scores.operation||0) + (scores.management||0) + (scores.communication||0)) / 3;
+                        const displayName = getVoterDisplayName(voter);
                         html += `<div class="history-item">
-                            <span class="history-voter">${esc(voter)}</span>
+                            <span class="history-voter">${esc(displayName)}</span>
                             <div class="history-scores">
                                 <span class="history-score-item">微操 <span class="val">${scores.operation||'-'}</span></span>
                                 <span class="history-score-item">战术 <span class="val">${scores.management||'-'}</span></span>
@@ -1724,11 +1769,12 @@
             let html = '';
             voterEntries.forEach(([voter, voteList]) => {
                 const totalVotes = voteList.length;
+                const displayName = getVoterDisplayName(voter);
                 html += `
                 <div class="voter-manage-card">
                     <div class="voter-manage-header">
                         <div class="voter-manage-info">
-                            <span class="voter-manage-name">${esc(voter)}</span>
+                            <span class="voter-manage-name">${esc(displayName)}</span>
                             <span class="voter-manage-count">共 ${totalVotes} 条投票</span>
                         </div>
                         <button class="btn-danger-sm" onclick="deleteAllVotesByVoter('${esc(voter)}')">🗑️ 清空全部</button>
