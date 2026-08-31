@@ -598,6 +598,197 @@
         .empty-state { text-align: center; padding: 40px 20px; color: #8b7355; }
         .empty-state .icon { font-size: 3em; margin-bottom: 12px; opacity: 0.5; }
 
+        /* Tournament Intro */
+        .tournament-intro {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(42,26,10,0.9) 0%, rgba(26,15,8,0.9) 100%);
+            border: 1px solid rgba(201,168,76,0.3);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .tournament-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4em;
+            color: #c9a84c;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(201,168,76,0.5);
+        }
+        .tournament-date {
+            color: #8b7355;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+        }
+        .tournament-desc {
+            color: #d4c5a0;
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin-bottom: 16px;
+            padding: 0 10px;
+        }
+        .btn-tournament {
+            background: linear-gradient(180deg, #8b1e1e 0%, #5a1515 100%);
+            color: #c9a84c;
+            border: 1px solid rgba(201,168,76,0.5);
+            padding: 12px 28px;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            transition: all 0.3s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .btn-tournament:hover {
+            background: linear-gradient(180deg, #a52a2a 0%, #6b1a1a 100%);
+            box-shadow: 0 0 15px rgba(201,168,76,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Tournament Modal */
+        .tournament-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .tournament-overlay.show { display: flex; }
+        .tournament-modal {
+            background: linear-gradient(180deg, #2a1a0a 0%, #1a0f08 100%);
+            border: 1px solid rgba(201,168,76,0.5);
+            border-radius: 4px;
+            padding: 30px;
+            max-width: 800px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .tournament-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(139,90,43,0.3);
+        }
+        .tournament-modal-header h2 {
+            color: #c9a84c;
+            font-family: 'Cinzel', serif;
+            font-size: 1.5em;
+            margin: 0;
+        }
+        .tournament-close {
+            background: none;
+            border: none;
+            color: #8b7355;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .tournament-close:hover { color: #c9a84c; }
+        .tournament-content {
+            color: #d4c5a0;
+            line-height: 1.8;
+        }
+        .tournament-section {
+            margin-bottom: 20px;
+        }
+        .tournament-section h3 {
+            color: #c9a84c;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            border-left: 3px solid #8b1e1e;
+            padding-left: 10px;
+        }
+        .tournament-section p {
+            margin: 0;
+            color: #d4c5a0;
+        }
+        .match-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .match-item {
+            background: rgba(139,90,43,0.1);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 4px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .match-teams {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        .match-team {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .match-team-name {
+            color: #c9a84c;
+            font-weight: bold;
+        }
+        .match-players {
+            color: #8b7355;
+            font-size: 0.85em;
+        }
+        .match-vs {
+            color: #8b1e1e;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .match-score {
+            color: #c9a84c;
+            font-weight: bold;
+            font-size: 1.1em;
+            min-width: 60px;
+            text-align: center;
+        }
+        .match-status {
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            min-width: 60px;
+            text-align: center;
+        }
+        .match-status.pending {
+            background: rgba(139,115,85,0.2);
+            color: #8b7355;
+        }
+        .match-status.live {
+            background: rgba(139,30,30,0.3);
+            color: #ff6b6b;
+            animation: pulse 1.5s infinite;
+        }
+        .match-status.finished {
+            background: rgba(76,175,80,0.2);
+            color: #4caf50;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .no-matches {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8b7355;
+        }
+        .no-matches .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -606,6 +797,9 @@
             .players-grid { grid-template-columns: 1fr; }
             .rating-row { flex-wrap: wrap; gap: 4px; }
             .rating-stars { order: 3; width: 100%; justify-content: flex-start; }
+            .tournament-title { font-size: 1.2em; }
+            .match-item { flex-direction: column; gap: 10px; align-items: flex-start; }
+            .match-teams { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -615,6 +809,16 @@
         <div class="header">
             <h1>⚔️ 魔兽双随4V4永动机选手评分</h1>
             <p>— 荣耀属于最强战士 —</p>
+            
+            <!-- 比赛简介 -->
+            <div class="tournament-intro">
+                <div class="tournament-title">🏆 永动机4V4双随赛第二季</div>
+                <div class="tournament-date">📅 2026.9.1 - 2026.9.13</div>
+                <div class="tournament-desc">
+                    欧欧赞助1000，赛季参与门槛50元/赛季！参与人数×50全部进入奖池，总积分前五获得保底600元总奖金，以4V4为主，会举办一场SOLO和2V2的比赛。
+                </div>
+                <button class="btn-tournament" onclick="openTournament()">🏟️ 进入比赛对阵</button>
+            </div>
         </div>
 
         <!-- Connection Status -->
@@ -829,6 +1033,40 @@
         </div>
     </div>
 
+    <!-- Tournament Modal -->
+    <div class="tournament-overlay" id="tournamentModal">
+        <div class="tournament-modal">
+            <div class="tournament-modal-header">
+                <h2>🏆 永动机4V4双随赛第二季</h2>
+                <button class="tournament-close" onclick="closeTournament()">✕</button>
+            </div>
+            <div class="tournament-content">
+                <div class="tournament-section">
+                    <h3>📅 比赛时间</h3>
+                    <p>2026.9.1 - 2026.9.13</p>
+                </div>
+                <div class="tournament-section">
+                    <h3>💰 奖池信息</h3>
+                    <p>欧欧赞助1000元，赛季参与门槛50元/赛季！参与人数×50全部进入奖池，总积分前五获得保底600元总奖金。</p>
+                </div>
+                <div class="tournament-section">
+                    <h3>🎮 比赛形式</h3>
+                    <p>以4V4为主，会举办一场SOLO和2V2的比赛。</p>
+                </div>
+                <div class="tournament-section">
+                    <h3>⚔️ 比赛对阵</h3>
+                    <div id="matchList">
+                        <div class="no-matches">
+                            <div class="icon">🏟️</div>
+                            <p>暂无比赛对阵信息</p>
+                            <p style="font-size:0.85em; margin-top:10px;">比赛对阵将在比赛开始前公布</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ===== State =====
         let sbClient = null;
@@ -897,6 +1135,27 @@
                 showToast('⚠️ 密钥错误');
             }
         }
+
+        // ===== Tournament Modal =====
+        function openTournament() {
+            document.getElementById('tournamentModal').classList.add('show');
+        }
+
+        function closeTournament() {
+            document.getElementById('tournamentModal').classList.remove('show');
+        }
+
+        // Close tournament modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const tournamentOverlay = document.getElementById('tournamentModal');
+            if (tournamentOverlay) {
+                tournamentOverlay.addEventListener('click', function(e) {
+                    if (e.target === tournamentOverlay) {
+                        closeTournament();
+                    }
+                });
+            }
+        });
 
         // ===== WC3 Hero Avatars =====
         const WC3_HEROES = [
