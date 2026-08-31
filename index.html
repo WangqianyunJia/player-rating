@@ -1538,6 +1538,11 @@
                 if (!votes[playerId]) votes[playerId] = {};
                 votes[playerId][currentVoter] = { ...ratings };
                 delete tempRatings[playerId];
+                // 保存 IP -> 自定义ID 映射
+                if (voterCustomId) {
+                    voterIdMap[voterIP] = voterCustomId;
+                    await cloudSaveVoterId(voterIP, voterCustomId);
+                }
                 renderAll();
                 showToast('✅ 评分已提交！');
             } catch (e) {
