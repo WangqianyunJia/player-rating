@@ -1474,13 +1474,35 @@
             }
         };
 
-        function loadTournamentData() {
-            const saved = localStorage.getItem('tournament_data');
-            if (saved) {
-                tournamentData = JSON.parse(saved);
+        async function loadTournamentData() {
+            // Try to load from Supabase first
+            try {
+                const res = await sb.from('votes').select('*').eq('player_id', '__tournament__').single();
+                if (res.data && res.data.ratings) {
+                    tournamentData = JSON.parse(res.data.ratings);
+                }
+            } catch (e) {
+                // Fallback to localStorage
+                const saved = localStorage.getItem('tournament_data');
+                if (saved) tournamentData = JSON.parse(saved);
             }
             renderScoreTable();
             renderMatchResults();
+        }
+
+        async function saveTournamentData() {
+            // Save to both localStorage and Supabase
+            localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
+            try {
+                const existing = await sb.from('votes').select('id').eq('player_id', '__tournament__').limit(1);
+                if (existing.data && existing.data.length > 0) {
+                    await sb.from('votes').update({ ratings: JSON.stringify(tournamentData), updated_at: new Date().toISOString() }).eq('player_id', '__tournament__');
+                } else {
+                    await sb.from('votes').insert({ player_id: '__tournament__', voter_name: 'tournament', ratings: JSON.stringify(tournamentData), created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+                }
+            } catch (e) {
+                console.warn('Failed to save tournament data to cloud:', e);
+            }
         }
 
         function recordMatchResult(group, winningSide) {
@@ -1546,7 +1568,7 @@
                 tournamentData.scores[player].score += 1;
             });
 
-            localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
+            saveTournamentData();
             renderScoreTable();
             renderMatchResults();
             showToast(`✅ ${group}组 ${winningSide === 'left' ? '左队' : '右队'} 获胜，积分已更新`);
