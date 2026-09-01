@@ -1478,8 +1478,8 @@
             // Try to load from Supabase first
             try {
                 const res = await sbClient.from('votes').select('*').eq('player_id', '__tournament__').single();
-                if (res.data && res.data.ratings) {
-                    tournamentData = JSON.parse(res.data.ratings);
+                if (res.data && res.data.voter_name) {
+                    tournamentData = JSON.parse(res.data.voter_name);
                     // Sync to localStorage
                     localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
                 } else {
@@ -1510,9 +1510,9 @@
             try {
                 const existing = await sbClient.from('votes').select('id').eq('player_id', '__tournament__').limit(1);
                 if (existing.data && existing.data.length > 0) {
-                    await sbClient.from('votes').update({ ratings: JSON.stringify(tournamentData), updated_at: new Date().toISOString() }).eq('player_id', '__tournament__');
+                    await sbClient.from('votes').update({ voter_name: JSON.stringify(tournamentData) }).eq('player_id', '__tournament__');
                 } else {
-                    await sbClient.from('votes').insert({ player_id: '__tournament__', voter_name: 'tournament', ratings: JSON.stringify(tournamentData), created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+                    await sbClient.from('votes').insert({ player_id: '__tournament__', voter_name: JSON.stringify(tournamentData), operation: 0, management: 0, communication: 0 });
                 }
             } catch (e) {
                 console.warn('Failed to save tournament data to cloud:', e);
