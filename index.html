@@ -1477,7 +1477,7 @@
         async function loadTournamentData() {
             // Try to load from Supabase first
             try {
-                const res = await sb.from('votes').select('*').eq('player_id', '__tournament__').single();
+                const res = await sbClient.from('votes').select('*').eq('player_id', '__tournament__').single();
                 if (res.data && res.data.ratings) {
                     tournamentData = JSON.parse(res.data.ratings);
                     // Sync to localStorage
@@ -1508,11 +1508,11 @@
             // Save to both localStorage and Supabase
             localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
             try {
-                const existing = await sb.from('votes').select('id').eq('player_id', '__tournament__').limit(1);
+                const existing = await sbClient.from('votes').select('id').eq('player_id', '__tournament__').limit(1);
                 if (existing.data && existing.data.length > 0) {
-                    await sb.from('votes').update({ ratings: JSON.stringify(tournamentData), updated_at: new Date().toISOString() }).eq('player_id', '__tournament__');
+                    await sbClient.from('votes').update({ ratings: JSON.stringify(tournamentData), updated_at: new Date().toISOString() }).eq('player_id', '__tournament__');
                 } else {
-                    await sb.from('votes').insert({ player_id: '__tournament__', voter_name: 'tournament', ratings: JSON.stringify(tournamentData), created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+                    await sbClient.from('votes').insert({ player_id: '__tournament__', voter_name: 'tournament', ratings: JSON.stringify(tournamentData), created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
                 }
             } catch (e) {
                 console.warn('Failed to save tournament data to cloud:', e);
@@ -1634,8 +1634,6 @@
                     }
                 });
             }
-            // Load tournament data on page load
-            loadTournamentData();
         });
 
         // ===== WC3 Hero Avatars =====
@@ -1804,6 +1802,8 @@
 
                 await loadAllData();
                 updateShareUrl();
+                // Load tournament data after cloud is ready
+                await loadTournamentData();
             } catch (e) {
                 cloudReady = false;
                 dot.className = 'conn-dot offline';
