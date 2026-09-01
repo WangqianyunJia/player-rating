@@ -1480,11 +1480,25 @@
                 const res = await sb.from('votes').select('*').eq('player_id', '__tournament__').single();
                 if (res.data && res.data.ratings) {
                     tournamentData = JSON.parse(res.data.ratings);
+                    // Sync to localStorage
+                    localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
+                } else {
+                    // Cloud has no data, try localStorage
+                    const saved = localStorage.getItem('tournament_data');
+                    if (saved) {
+                        tournamentData = JSON.parse(saved);
+                        // Sync localStorage to cloud
+                        await saveTournamentData();
+                    }
                 }
             } catch (e) {
                 // Fallback to localStorage
                 const saved = localStorage.getItem('tournament_data');
-                if (saved) tournamentData = JSON.parse(saved);
+                if (saved) {
+                    tournamentData = JSON.parse(saved);
+                    // Try to sync to cloud
+                    await saveTournamentData();
+                }
             }
             renderScoreTable();
             renderMatchResults();
