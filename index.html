@@ -789,6 +789,124 @@
             opacity: 0.5;
         }
 
+        /* Match Card */
+        .match-card {
+            background: rgba(139,90,43,0.1);
+            border: 1px solid rgba(139,90,43,0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .match-team {
+            flex: 1;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .team-a {
+            background: rgba(139,30,30,0.1);
+            border: 1px solid rgba(139,30,30,0.3);
+        }
+        .team-b {
+            background: rgba(30,100,139,0.1);
+            border: 1px solid rgba(30,100,139,0.3);
+        }
+        .team-label {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #c9a84c;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .team-players {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .team-players span {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 10px;
+            border-radius: 4px;
+            color: #d4c5a0;
+            font-size: 0.9em;
+        }
+        .match-vs {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #c9a84c;
+            padding: 0 20px;
+        }
+        .match-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .btn-win, .btn-lose {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-win {
+            background: linear-gradient(180deg, #4caf50 0%, #2e7d32 100%);
+            color: white;
+        }
+        .btn-win:hover {
+            background: linear-gradient(180deg, #66bb6a 0%, #388e3c 100%);
+            transform: translateY(-2px);
+        }
+        .btn-lose {
+            background: linear-gradient(180deg, #8b1e1e 0%, #5a1515 100%);
+            color: #c9a84c;
+        }
+        .btn-lose:hover {
+            background: linear-gradient(180deg, #a52a2a 0%, #6b1a1a 100%);
+            transform: translateY(-2px);
+        }
+        .match-result {
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            color: #c9a84c;
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            overflow-x: auto;
+        }
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .score-table th, .score-table td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(139,90,43,0.2);
+        }
+        .score-table th {
+            background: rgba(139,90,43,0.3);
+            color: #c9a84c;
+            font-weight: bold;
+        }
+        .score-table td {
+            color: #d4c5a0;
+        }
+        .score-table tr:hover {
+            background: rgba(139,90,43,0.1);
+        }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -1053,14 +1171,59 @@
                     <h3>🎮 比赛形式</h3>
                     <p>以4V4为主，会举办一场SOLO和2V2的比赛。</p>
                 </div>
+                <!-- 比赛对阵 -->
                 <div class="tournament-section">
-                    <h3>⚔️ 比赛对阵</h3>
-                    <div id="matchList">
-                        <div class="no-matches">
-                            <div class="icon">🏟️</div>
-                            <p>暂无比赛对阵信息</p>
-                            <p style="font-size:0.85em; margin-top:10px;">比赛对阵将在比赛开始前公布</p>
+                    <h3>⚔️ 比赛对阵 - Day 1 (9月1日)</h3>
+                    <div class="match-card">
+                        <div class="match-teams">
+                            <div class="match-team team-a">
+                                <div class="team-label">A队</div>
+                                <div class="team-players">
+                                    <span>静雅</span>
+                                    <span>腿神</span>
+                                    <span>洋芋</span>
+                                    <span>男孩</span>
+                                </div>
+                            </div>
+                            <div class="match-vs">VS</div>
+                            <div class="match-team team-b">
+                                <div class="team-label">B队</div>
+                                <div class="team-players">
+                                    <span>欧欧</span>
+                                    <span>素白</span>
+                                    <span>做菜</span>
+                                    <span>天仙</span>
+                                </div>
+                            </div>
                         </div>
+                        <div class="match-actions">
+                            <button class="btn-win" onclick="recordMatchResult('A', 'win')">A队胜</button>
+                            <button class="btn-lose" onclick="recordMatchResult('B', 'win')">B队胜</button>
+                        </div>
+                        <div class="match-result" id="match1Result"></div>
+                    </div>
+                </div>
+                
+                <!-- 积分表 -->
+                <div class="tournament-section">
+                    <h3>📊 积分表</h3>
+                    <div class="scoreboard">
+                        <table class="score-table">
+                            <thead>
+                                <tr>
+                                    <th>选手</th>
+                                    <th>队伍</th>
+                                    <th>胜场</th>
+                                    <th>负场</th>
+                                    <th>积分</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoreTableBody">
+                                <tr>
+                                    <td colspan="5" style="text-align:center; color:#8b7355;">暂无比赛记录</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1139,10 +1302,116 @@
         // ===== Tournament Modal =====
         function openTournament() {
             document.getElementById('tournamentModal').classList.add('show');
+            loadTournamentData();
         }
 
         function closeTournament() {
             document.getElementById('tournamentModal').classList.remove('show');
+        }
+
+        // ===== Tournament Data =====
+        let tournamentData = {
+            matches: [],
+            scores: {}
+        };
+
+        const teamA = ['静雅', '腿神', '洋芋', '男孩'];
+        const teamB = ['欧欧', '素白', '做菜', '天仙'];
+
+        function loadTournamentData() {
+            // 从localStorage加载比赛数据
+            const saved = localStorage.getItem('tournament_data');
+            if (saved) {
+                tournamentData = JSON.parse(saved);
+            }
+            renderScoreTable();
+            renderMatchResult();
+        }
+
+        function recordMatchResult(winningTeam, result) {
+            if (!isAdmin) {
+                showToast('⚠️ 只有管理员可以记录比赛结果');
+                return;
+            }
+
+            const match = {
+                day: 1,
+                date: '2026-09-01',
+                teamA: [...teamA],
+                teamB: [...teamB],
+                winner: winningTeam,
+                timestamp: new Date().toISOString()
+            };
+
+            tournamentData.matches.push(match);
+
+            // 更新积分
+            teamA.forEach(player => {
+                if (!tournamentData.scores[player]) {
+                    tournamentData.scores[player] = { team: 'A', wins: 0, losses: 0, score: 0 };
+                }
+                if (winningTeam === 'A') {
+                    tournamentData.scores[player].wins++;
+                    tournamentData.scores[player].score += 3;
+                } else {
+                    tournamentData.scores[player].losses++;
+                    tournamentData.scores[player].score += 1;
+                }
+            });
+
+            teamB.forEach(player => {
+                if (!tournamentData.scores[player]) {
+                    tournamentData.scores[player] = { team: 'B', wins: 0, losses: 0, score: 0 };
+                }
+                if (winningTeam === 'B') {
+                    tournamentData.scores[player].wins++;
+                    tournamentData.scores[player].score += 3;
+                } else {
+                    tournamentData.scores[player].losses++;
+                    tournamentData.scores[player].score += 1;
+                }
+            });
+
+            // 保存到localStorage
+            localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
+
+            renderScoreTable();
+            renderMatchResult();
+            showToast(`✅ ${winningTeam}队获胜，积分已更新`);
+        }
+
+        function renderMatchResult() {
+            const resultDiv = document.getElementById('match1Result');
+            if (tournamentData.matches.length > 0) {
+                const lastMatch = tournamentData.matches[tournamentData.matches.length - 1];
+                resultDiv.innerHTML = `✅ ${lastMatch.winner}队获胜 (${lastMatch.timestamp.split('T')[0]})`;
+            } else {
+                resultDiv.innerHTML = '';
+            }
+        }
+
+        function renderScoreTable() {
+            const tbody = document.getElementById('scoreTableBody');
+            const scores = tournamentData.scores;
+
+            if (Object.keys(scores).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#8b7355;">暂无比赛记录</td></tr>';
+                return;
+            }
+
+            // 按积分排序
+            const sortedPlayers = Object.entries(scores)
+                .sort((a, b) => b[1].score - a[1].score);
+
+            tbody.innerHTML = sortedPlayers.map(([player, data]) => `
+                <tr>
+                    <td>${player}</td>
+                    <td>${data.team}队</td>
+                    <td>${data.wins}</td>
+                    <td>${data.losses}</td>
+                    <td style="color:#c9a84c; font-weight:bold;">${data.score}</td>
+                </tr>
+            `).join('');
         }
 
         // Close tournament modal when clicking outside
