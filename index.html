@@ -1458,11 +1458,7 @@
         }
 
         // ===== Tournament Data =====
-        let tournamentData = {
-            matches: [],
-            scores: {}
-        };
-
+        // Player names hardcoded in JS - no Chinese encoding issues
         const matchGroups = {
             A: {
                 left: ['胜', '静雅', '洋芋', '墩墩猪'],
@@ -1474,45 +1470,84 @@
             }
         };
 
+        // Default match results (Day 1)
+        const defaultMatchResults = {
+            A: 'right',  // A组右队胜
+            B: 'left'    // B组左队胜
+        };
+
+        let tournamentData = {
+            matches: [],
+            scores: {}
+        };
+
+        // Calculate scores from match results
+        function calculateScores(results) {
+            const scores = {};
+            for (const [group, winner] of Object.entries(results)) {
+                const groupData = matchGroups[group];
+                const winningTeam = groupData[winner];
+                const losingTeam = groupData[winner === 'left' ? 'right' : 'left'];
+
+                winningTeam.forEach(player => {
+                    scores[player] = { team: group + '-' + winner, wins: 1, losses: 0, score: 3 };
+                });
+                losingTeam.forEach(player => {
+                    scores[player] = { team: group + '-' + (winner === 'left' ? 'right' : 'left'), wins: 0, losses: 1, score: 1 };
+                });
+            }
+            return scores;
+        }
+
+        // Initialize with default results
+        function initTournamentData(results) {
+            tournamentData.matches = [];
+            for (const [group, winner] of Object.entries(results)) {
+                tournamentData.matches.push({
+                    group: group,
+                    day: 1,
+                    date: '2026-09-01',
+                    leftTeam: matchGroups[group].left,
+                    rightTeam: matchGroups[group].right,
+                    winner: winner,
+                    timestamp: '2026-09-01T12:00:00.000Z'
+                });
+            }
+            tournamentData.scores = calculateScores(results);
+        }
+
         async function loadTournamentData() {
-            // Try to load from Supabase first
+            // Load match results from Supabase (only stores group:winner, no Chinese)
             try {
                 const res = await sbClient.from('votes').select('*').eq('player_id', '__tournament__').single();
                 if (res.data && res.data.voter_name) {
-                    tournamentData = JSON.parse(res.data.voter_name);
-                    // Sync to localStorage
-                    localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
+                    const results = JSON.parse(res.data.voter_name);
+                    initTournamentData(results);
                 } else {
-                    // Cloud has no data, try localStorage
-                    const saved = localStorage.getItem('tournament_data');
-                    if (saved) {
-                        tournamentData = JSON.parse(saved);
-                        // Sync localStorage to cloud
-                        await saveTournamentData();
-                    }
+                    // Use default results
+                    initTournamentData(defaultMatchResults);
                 }
             } catch (e) {
-                // Fallback to localStorage
-                const saved = localStorage.getItem('tournament_data');
-                if (saved) {
-                    tournamentData = JSON.parse(saved);
-                    // Try to sync to cloud
-                    await saveTournamentData();
-                }
+                // Use default results
+                initTournamentData(defaultMatchResults);
             }
             renderScoreTable();
             renderMatchResults();
         }
 
         async function saveTournamentData() {
-            // Save to both localStorage and Supabase
-            localStorage.setItem('tournament_data', JSON.stringify(tournamentData));
+            // Only save match results (group -> winner), no Chinese characters
+            const results = {};
+            tournamentData.matches.forEach(m => {
+                results[m.group] = m.winner;
+            });
             try {
+                const resultsStr = JSON.stringify(results);
                 const existing = await sbClient.from('votes').select('id').eq('player_id', '__tournament__').limit(1);
                 if (existing.data && existing.data.length > 0) {
-                    await sbClient.from('votes').update({ voter_name: JSON.stringify(tournamentData) }).eq('player_id', '__tournament__');
+                    await sbClient.from('votes').update({ voter_name: resultsStr }).eq('player_id', '__tournament__');
                 } else {
-                    await sbClient.from('votes').insert({ player_id: '__tournament__', voter_name: JSON.stringify(tournamentData), operation: 0, management: 0, communication: 0 });
+                    await sbClient.from('votes').insert({ player_id: '__tournament__', voter_name: resultsStr, operation: 0, management: 0, communication: 0 });
                 }
             } catch (e) {
                 console.warn('Failed to save tournament data to cloud:', e);
