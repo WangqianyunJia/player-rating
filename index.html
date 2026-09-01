@@ -1089,9 +1089,9 @@
                         <thead>
                             <tr>
                                 <th>选手</th>
-                                <th>队伍</th>
                                 <th>胜场</th>
                                 <th>负场</th>
+                                <th>胜率</th>
                                 <th>积分</th>
                             </tr>
                         </thead>
@@ -1648,15 +1648,19 @@
             const sortedPlayers = Object.entries(scores)
                 .sort((a, b) => b[1].score - a[1].score);
 
-            tbody.innerHTML = sortedPlayers.map(([player, data]) => `
+            tbody.innerHTML = sortedPlayers.map(([player, data]) => {
+                const totalGames = data.wins + data.losses;
+                const winRate = totalGames > 0 ? ((data.wins / totalGames) * 100).toFixed(1) + '%' : '0%';
+                return `
                 <tr>
                     <td>${player}</td>
-                    <td>${data.team}</td>
                     <td>${data.wins}</td>
                     <td>${data.losses}</td>
+                    <td style="color:#4caf50;">${winRate}</td>
                     <td style="color:#c9a84c; font-weight:bold;">${data.score}</td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Close tournament modal when clicking outside
