@@ -1089,6 +1089,7 @@
                         <thead>
                             <tr>
                                 <th>选手</th>
+                                <th>比赛日期</th>
                                 <th>胜场</th>
                                 <th>负场</th>
                                 <th>胜率</th>
@@ -1097,7 +1098,7 @@
                         </thead>
                         <tbody id="scoreTableBody">
                             <tr>
-                                <td colspan="5" style="text-align:center; color:#8b7355;">暂无比赛记录</td>
+                                <td colspan="6" style="text-align:center; color:#8b7355;">暂无比赛记录</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1646,9 +1647,16 @@
             const scores = tournamentData.scores;
 
             if (Object.keys(scores).length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#8b7355;">暂无比赛记录</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#8b7355;">暂无比赛记录</td></tr>';
                 return;
             }
+
+            // Get match dates from tournamentData.matches
+            const matchDates = {};
+            tournamentData.matches.forEach(m => {
+                if (!matchDates[m.group]) matchDates[m.group] = [];
+                matchDates[m.group].push(m.date || '2026-09-01');
+            });
 
             const sortedPlayers = Object.entries(scores)
                 .sort((a, b) => b[1].score - a[1].score);
@@ -1656,9 +1664,15 @@
             tbody.innerHTML = sortedPlayers.map(([player, data]) => {
                 const totalGames = data.wins + data.losses;
                 const winRate = totalGames > 0 ? ((data.wins / totalGames) * 100).toFixed(1) + '%' : '0%';
+                // Get dates for this player's team
+                const teamKey = data.team;
+                const group = teamKey.split('-')[0];
+                const dates = matchDates[group] || [];
+                const dateStr = dates.length > 0 ? dates.join(', ') : '-';
                 return `
                 <tr>
                     <td>${player}</td>
+                    <td style="color:#5a8abf; font-size:0.85em;">${dateStr}</td>
                     <td>${data.wins}</td>
                     <td>${data.losses}</td>
                     <td style="color:#4caf50;">${winRate}</td>
