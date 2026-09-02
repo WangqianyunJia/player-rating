@@ -789,147 +789,206 @@
             opacity: 0.5;
         }
 
-        /* Match Card */
-        .match-card {
-            background: linear-gradient(135deg, rgba(42,26,10,0.95) 0%, rgba(26,15,8,0.95) 100%);
-            border: 1px solid rgba(201,168,76,0.3);
-            border-radius: 8px;
-            padding: 20px;
+        /* Match Section - Compact Tech Style */
+        .match-day-header {
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 1.4em;
+            color: #c9a84c;
+            margin-bottom: 16px;
+            text-shadow: 0 0 12px rgba(201,168,76,0.4);
+            letter-spacing: 2px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+        }
+        .match-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-bottom: 20px;
+        }
+        @media (max-width: 600px) {
+            .match-grid { grid-template-columns: 1fr; }
+        }
+        .match-block {
+            background: linear-gradient(135deg, rgba(10,20,40,0.95) 0%, rgba(5,12,25,0.95) 100%);
+            border: 1px solid rgba(60,120,200,0.3);
+            border-radius: 6px;
+            padding: 12px;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s;
         }
-        .match-card::before {
+        .match-block::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3c78c8, transparent);
         }
-        .match-group-label {
+        .match-block.winner-left { border-color: rgba(200,60,60,0.5); }
+        .match-block.winner-left::before { background: linear-gradient(90deg, transparent, #c83c3c, transparent); }
+        .match-block.winner-right { border-color: rgba(60,160,200,0.5); }
+        .match-block.winner-right::before { background: linear-gradient(90deg, transparent, #3ca0c8, transparent); }
+        .match-block-label {
+            font-size: 0.8em;
+            color: #5a8abf;
             text-align: center;
-            font-family: 'Cinzel', serif;
-            font-size: 1.3em;
-            color: #c9a84c;
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px rgba(201,168,76,0.5);
-            letter-spacing: 3px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
         }
-        .match-teams {
+        .match-block-teams {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 8px;
         }
-        .match-team {
+        .match-block-team {
             flex: 1;
-            padding: 15px;
+            text-align: center;
         }
-        .team-left {
-            background: linear-gradient(135deg, rgba(139,30,30,0.15) 0%, rgba(90,21,21,0.1) 100%);
-            border: 1px solid rgba(139,30,30,0.3);
-            border-radius: 6px;
+        .match-block-team .team-name {
+            font-size: 0.85em;
+            color: #8ab4e8;
+            font-weight: bold;
+            margin-bottom: 4px;
         }
-        .team-right {
-            background: linear-gradient(135deg, rgba(30,100,139,0.15) 0%, rgba(21,70,90,0.1) 100%);
-            border: 1px solid rgba(30,100,139,0.3);
-            border-radius: 6px;
-        }
-        .team-players {
+        .match-block-team .team-players-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 3px;
             justify-content: center;
         }
-        .player-name {
-            background: linear-gradient(180deg, rgba(201,168,76,0.2) 0%, rgba(139,90,43,0.2) 100%);
-            border: 1px solid rgba(201,168,76,0.4);
-            padding: 6px 12px;
-            border-radius: 4px;
-            color: #d4c5a0;
-            font-size: 0.95em;
+        .match-block-team .player-tag {
+            background: rgba(60,120,200,0.15);
+            border: 1px solid rgba(60,120,200,0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #b0c8e8;
+            font-size: 0.75em;
+        }
+        .match-block-team.winner .player-tag {
+            background: rgba(201,168,76,0.2);
+            border-color: rgba(201,168,76,0.5);
+            color: #c9a84c;
+        }
+        .match-block-vs {
+            font-size: 1.2em;
+            color: #c9a84c;
             font-weight: bold;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-        .match-vs-badge {
-            font-size: 2em;
-            padding: 0 20px;
-            color: #c9a84c;
-            text-shadow: 0 0 15px rgba(201,168,76,0.5);
-        }
-        .match-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        .btn-result {
-            padding: 10px 25px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: 'Cinzel', serif;
-            font-size: 0.95em;
-            transition: all 0.3s;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-        .btn-left {
-            background: linear-gradient(180deg, #8b1e1e 0%, #5a1515 100%);
-            color: #c9a84c;
-            border: 1px solid rgba(201,168,76,0.4);
-        }
-        .btn-left:hover {
-            background: linear-gradient(180deg, #a52a2a 0%, #6b1a1a 100%);
-            box-shadow: 0 0 15px rgba(139,30,30,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-right {
-            background: linear-gradient(180deg, #1e5a8b 0%, #153d5a 100%);
-            color: #c9a84c;
-            border: 1px solid rgba(201,168,76,0.4);
-        }
-        .btn-right:hover {
-            background: linear-gradient(180deg, #2a6ba5 0%, #1a4d6b 100%);
-            box-shadow: 0 0 15px rgba(30,100,139,0.5);
-            transform: translateY(-2px);
-        }
-        .match-result-badge {
+            text-shadow: 0 0 8px rgba(201,168,76,0.4);
+            min-width: 30px;
             text-align: center;
-            padding: 10px;
+        }
+        .match-block-score {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .score-input {
+            width: 36px;
+            height: 28px;
+            text-align: center;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(60,120,200,0.4);
+            border-radius: 4px;
+            color: #ffd700;
+            font-size: 1em;
             font-weight: bold;
+            outline: none;
+        }
+        .score-input:focus {
+            border-color: #c9a84c;
+            box-shadow: 0 0 8px rgba(201,168,76,0.3);
+        }
+        .score-separator {
             color: #c9a84c;
-            font-size: 1.1em;
-            min-height: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .match-block-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+        .btn-match-result {
+            padding: 4px 12px;
+            border: 1px solid rgba(60,120,200,0.4);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: rgba(60,120,200,0.15);
+            color: #8ab4e8;
+        }
+        .btn-match-result:hover {
+            background: rgba(60,120,200,0.3);
+            box-shadow: 0 0 8px rgba(60,120,200,0.3);
+        }
+        .btn-match-result.btn-win-left {
+            background: rgba(200,60,60,0.2);
+            border-color: rgba(200,60,60,0.4);
+            color: #e88a8a;
+        }
+        .btn-match-result.btn-win-left:hover {
+            background: rgba(200,60,60,0.35);
+            box-shadow: 0 0 8px rgba(200,60,60,0.3);
+        }
+        .btn-match-result.btn-win-right {
+            background: rgba(60,160,200,0.2);
+            border-color: rgba(60,160,200,0.4);
+            color: #8ad4e8;
+        }
+        .btn-match-result.btn-win-right:hover {
+            background: rgba(60,160,200,0.35);
+            box-shadow: 0 0 8px rgba(60,160,200,0.3);
+        }
+        .match-block-result {
+            text-align: center;
+            font-size: 0.8em;
+            color: #c9a84c;
+            margin-top: 6px;
+            min-height: 18px;
         }
 
-        /* Scoreboard */
+        /* Scoreboard - Tech Style */
         .scoreboard {
             overflow-x: auto;
         }
         .score-table {
             width: 100%;
             border-collapse: collapse;
-            background: rgba(0,0,0,0.2);
+            background: rgba(5,12,25,0.8);
+            border: 1px solid rgba(60,120,200,0.3);
             border-radius: 6px;
             overflow: hidden;
         }
         .score-table th, .score-table td {
             padding: 10px 12px;
             text-align: center;
-            border-bottom: 1px solid rgba(139,90,43,0.2);
+            border-bottom: 1px solid rgba(60,120,200,0.15);
         }
         .score-table th {
-            background: rgba(139,90,43,0.3);
-            color: #c9a84c;
+            background: linear-gradient(180deg, rgba(20,40,80,0.8) 0%, rgba(10,20,40,0.8) 100%);
+            color: #5a8abf;
             font-weight: bold;
+            font-size: 0.9em;
+            letter-spacing: 1px;
         }
         .score-table td {
-            color: #d4c5a0;
+            color: #b0c8e8;
         }
         .score-table tr:hover {
-            background: rgba(139,90,43,0.1);
+            background: rgba(60,120,200,0.08);
         }
+        .score-table .rank-1 td { color: #ffd700; }
+        .score-table .rank-2 td { color: #c0c0c0; }
+        .score-table .rank-3 td { color: #cd7f32; }
 
         /* Homepage Section */
         .homepage-section {
@@ -1020,68 +1079,9 @@
         <div class="homepage-section" id="homepageSection">
             <!-- Day 1 Matches -->
             <div class="ranking-section">
-                <h2>⚔️ 比赛对阵 - Day 1 (9月1日)</h2>
-
-                <!-- A组对抗 -->
-                <div class="match-card" id="matchCardA">
-                    <div class="match-group-label">A 组</div>
-                    <div class="match-teams">
-                        <div class="match-team team-left">
-                            <div class="team-players">
-                                <span class="player-name">胜</span>
-                                <span class="player-name">静雅</span>
-                                <span class="player-name">洋芋</span>
-                                <span class="player-name">墩墩猪</span>
-                            </div>
-                        </div>
-                        <div class="match-vs-badge">⚔️</div>
-                        <div class="match-team team-right">
-                            <div class="team-players">
-                                <span class="player-name">掰头王</span>
-                                <span class="player-name">腿神</span>
-                                <span class="player-name">男孩</span>
-                                <span class="player-name">鸡脚</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="match-actions">
-                        <button class="btn-result btn-left" onclick="recordMatchResult('A','left')">左队胜</button>
-                        <button class="btn-result btn-right" onclick="recordMatchResult('A','right')">右队胜</button>
-                    </div>
-                    <div class="match-result-badge" id="matchResultA"></div>
-                </div>
-
-                <!-- B组对抗 -->
-                <div class="match-card" id="matchCardB">
-                    <div class="match-group-label">B 组</div>
-                    <div class="match-teams">
-                        <div class="match-team team-left">
-                            <div class="team-players">
-                                <span class="player-name">欧欧</span>
-                                <span class="player-name">做菜</span>
-                                <span class="player-name">玉树</span>
-                                <span class="player-name">痞子猪</span>
-                            </div>
-                        </div>
-                        <div class="match-vs-badge">⚔️</div>
-                        <div class="match-team team-right">
-                            <div class="team-players">
-                                <span class="player-name">素白</span>
-                                <span class="player-name">天仙</span>
-                                <span class="player-name">炼金</span>
-                                <span class="player-name">可乐</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="match-actions">
-                        <button class="btn-result btn-left" onclick="recordMatchResult('B','left')">左队胜</button>
-                        <button class="btn-result btn-right" onclick="recordMatchResult('B','right')">右队胜</button>
-                    </div>
-                    <div class="match-result-badge" id="matchResultB"></div>
-                </div>
-            </div>
-
-            <!-- Scoreboard -->
+                <div class="match-day-header">⚔️ 比赛对阵 - Day 1 (9月1日)</div>
+                <div class="match-grid" id="matchGrid"></div>
+            </div><!-- Scoreboard -->
             <div class="ranking-section">
                 <h2>📊 积分表</h2>
                 <div class="scoreboard">
@@ -1472,8 +1472,8 @@
 
         // Default match results (Day 1)
         const defaultMatchResults = {
-            A: 'right',  // A组右队胜
-            B: 'left'    // B组左队胜
+            A: { winner: 'right', scoreLeft: 0, scoreRight: 0 },
+            B: { winner: 'left', scoreLeft: 0, scoreRight: 0 }
         };
 
         let tournamentData = {
@@ -1484,16 +1484,16 @@
         // Calculate scores from match results
         function calculateScores(results) {
             const scores = {};
-            for (const [group, winner] of Object.entries(results)) {
+            for (const [group, data] of Object.entries(results)) {
                 const groupData = matchGroups[group];
-                const winningTeam = groupData[winner];
-                const losingTeam = groupData[winner === 'left' ? 'right' : 'left'];
+                const winningTeam = groupData[data.winner];
+                const losingTeam = groupData[data.winner === 'left' ? 'right' : 'left'];
 
                 winningTeam.forEach(player => {
-                    scores[player] = { team: group + '-' + winner, wins: 1, losses: 0, score: 3 };
+                    scores[player] = { team: group + '-' + data.winner, wins: 1, losses: 0, score: 3 };
                 });
                 losingTeam.forEach(player => {
-                    scores[player] = { team: group + '-' + (winner === 'left' ? 'right' : 'left'), wins: 0, losses: 1, score: 1 };
+                    scores[player] = { team: group + '-' + (data.winner === 'left' ? 'right' : 'left'), wins: 0, losses: 1, score: 1 };
                 });
             }
             return scores;
@@ -1502,14 +1502,16 @@
         // Initialize with default results
         function initTournamentData(results) {
             tournamentData.matches = [];
-            for (const [group, winner] of Object.entries(results)) {
+            for (const [group, data] of Object.entries(results)) {
                 tournamentData.matches.push({
                     group: group,
                     day: 1,
                     date: '2026-09-01',
                     leftTeam: matchGroups[group].left,
                     rightTeam: matchGroups[group].right,
-                    winner: winner,
+                    winner: data.winner,
+                    scoreLeft: data.scoreLeft || 0,
+                    scoreRight: data.scoreRight || 0,
                     timestamp: '2026-09-01T12:00:00.000Z'
                 });
             }
@@ -1517,29 +1519,25 @@
         }
 
         async function loadTournamentData() {
-            // Load match results from Supabase (only stores group:winner, no Chinese)
             try {
                 const res = await sbClient.from('votes').select('*').eq('player_id', '__tournament__').single();
                 if (res.data && res.data.voter_name) {
                     const results = JSON.parse(res.data.voter_name);
                     initTournamentData(results);
                 } else {
-                    // Use default results
                     initTournamentData(defaultMatchResults);
                 }
             } catch (e) {
-                // Use default results
                 initTournamentData(defaultMatchResults);
             }
+            renderMatchGrid();
             renderScoreTable();
-            renderMatchResults();
         }
 
         async function saveTournamentData() {
-            // Only save match results (group -> winner), no Chinese characters
             const results = {};
             tournamentData.matches.forEach(m => {
-                results[m.group] = m.winner;
+                results[m.group] = { winner: m.winner, scoreLeft: m.scoreLeft || 0, scoreRight: m.scoreRight || 0 };
             });
             try {
                 const resultsStr = JSON.stringify(results);
@@ -1554,6 +1552,44 @@
             }
         }
 
+        // Render match blocks in grid
+        function renderMatchGrid() {
+            const grid = document.getElementById('matchGrid');
+            if (!grid) return;
+            grid.innerHTML = tournamentData.matches.map(m => {
+                const winnerClass = m.winner === 'left' ? 'winner-left' : (m.winner === 'right' ? 'winner-right' : '');
+                const leftWinClass = m.winner === 'left' ? 'winner' : '';
+                const rightWinClass = m.winner === 'right' ? 'winner' : '';
+                return `
+                <div class="match-block ${winnerClass}" id="matchBlock${m.group}">
+                    <div class="match-block-label">${m.group} 组</div>
+                    <div class="match-block-teams">
+                        <div class="match-block-team ${leftWinClass}">
+                            <div class="team-players-row">
+                                ${m.leftTeam.map(p => `<span class="player-tag">${p}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="match-block-vs">VS</div>
+                        <div class="match-block-team ${rightWinClass}">
+                            <div class="team-players-row">
+                                ${m.rightTeam.map(p => `<span class="player-tag">${p}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="match-block-score">
+                        <input type="number" class="score-input" id="scoreLeft${m.group}" value="${m.scoreLeft || 0}" min="0" max="9" ${isAdmin ? '' : 'readonly'} />
+                        <span class="score-separator">:</span>
+                        <input type="number" class="score-input" id="scoreRight${m.group}" value="${m.scoreRight || 0}" min="0" max="9" ${isAdmin ? '' : 'readonly'} />
+                    </div>
+                    <div class="match-block-actions">
+                        <button class="btn-match-result btn-win-left" onclick="recordMatchResult('${m.group}','left')">左队胜</button>
+                        <button class="btn-match-result btn-win-right" onclick="recordMatchResult('${m.group}','right')">右队胜</button>
+                    </div>
+                    <div class="match-block-result" id="matchResult${m.group}">${m.winner ? (m.winner === 'left' ? '✅ 左队获胜' : '✅ 右队获胜') : ''}</div>
+                </div>`;
+            }).join('');
+        }
+
         function recordMatchResult(group, winningSide) {
             if (!isAdmin) {
                 showToast('⚠️ 只有管理员可以记录比赛结果');
@@ -1564,6 +1600,12 @@
             const winningTeam = groupData[winningSide];
             const losingTeam = groupData[winningSide === 'left' ? 'right' : 'left'];
 
+            // Read scores from input fields
+            const scoreLeftEl = document.getElementById('scoreLeft' + group);
+            const scoreRightEl = document.getElementById('scoreRight' + group);
+            const scoreLeft = scoreLeftEl ? parseInt(scoreLeftEl.value) || 0 : 0;
+            const scoreRight = scoreRightEl ? parseInt(scoreRightEl.value) || 0 : 0;
+
             const match = {
                 group: group,
                 day: 1,
@@ -1571,69 +1613,32 @@
                 leftTeam: groupData.left,
                 rightTeam: groupData.right,
                 winner: winningSide,
+                scoreLeft: scoreLeft,
+                scoreRight: scoreRight,
                 timestamp: new Date().toISOString()
             };
 
-            // 检查是否已存在该组的比赛记录，如果有则先撤销旧积分
+            // Recalculate all scores from scratch
+            const results = {};
+            tournamentData.matches.forEach(m => {
+                if (m.group === group) return; // skip old result for this group
+                results[m.group] = { winner: m.winner, scoreLeft: m.scoreLeft || 0, scoreRight: m.scoreRight || 0 };
+            });
+            results[group] = { winner: winningSide, scoreLeft: scoreLeft, scoreRight: scoreRight };
+
+            // Update matches array
             const existingMatchIdx = tournamentData.matches.findIndex(m => m.group === group && m.day === 1);
             if (existingMatchIdx >= 0) {
-                const oldMatch = tournamentData.matches[existingMatchIdx];
-                const oldWinner = oldMatch.winner;
-                const oldWinningTeam = matchGroups[group][oldWinner];
-                const oldLosingTeam = matchGroups[group][oldWinner === 'left' ? 'right' : 'left'];
-
-                oldWinningTeam.forEach(player => {
-                    if (tournamentData.scores[player]) {
-                        tournamentData.scores[player].wins = Math.max(0, tournamentData.scores[player].wins - 1);
-                        tournamentData.scores[player].score = Math.max(0, tournamentData.scores[player].score - 3);
-                    }
-                });
-                oldLosingTeam.forEach(player => {
-                    if (tournamentData.scores[player]) {
-                        tournamentData.scores[player].losses = Math.max(0, tournamentData.scores[player].losses - 1);
-                        tournamentData.scores[player].score = Math.max(0, tournamentData.scores[player].score - 1);
-                    }
-                });
-
                 tournamentData.matches[existingMatchIdx] = match;
             } else {
                 tournamentData.matches.push(match);
             }
 
-            // 更新积分：赢+3，输+1
-            winningTeam.forEach(player => {
-                if (!tournamentData.scores[player]) {
-                    tournamentData.scores[player] = { team: group + '-' + winningSide, wins: 0, losses: 0, score: 0 };
-                }
-                tournamentData.scores[player].wins++;
-                tournamentData.scores[player].score += 3;
-            });
-
-            losingTeam.forEach(player => {
-                if (!tournamentData.scores[player]) {
-                    tournamentData.scores[player] = { team: group + '-' + (winningSide === 'left' ? 'right' : 'left'), wins: 0, losses: 0, score: 0 };
-                }
-                tournamentData.scores[player].losses++;
-                tournamentData.scores[player].score += 1;
-            });
-
+            tournamentData.scores = calculateScores(results);
             saveTournamentData();
+            renderMatchGrid();
             renderScoreTable();
-            renderMatchResults();
             showToast(`✅ ${group}组 ${winningSide === 'left' ? '左队' : '右队'} 获胜，积分已更新`);
-        }
-
-        function renderMatchResults() {
-            ['A', 'B'].forEach(group => {
-                const resultDiv = document.getElementById('matchResult' + group);
-                const match = tournamentData.matches.find(m => m.group === group && m.day === 1);
-                if (match) {
-                    const winnerName = match.winner === 'left' ? '左队' : '右队';
-                    resultDiv.innerHTML = `✅ ${winnerName}获胜 (${match.timestamp.split('T')[0]})`;
-                } else {
-                    resultDiv.innerHTML = '';
-                }
-            });
         }
 
         function renderScoreTable() {
