@@ -807,8 +807,27 @@
             gap: 12px;
             margin-bottom: 20px;
         }
+        .match-day-section {
+            margin-bottom: 20px;
+        }
+        .match-day-subheader {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1em;
+            color: #c9a84c;
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+            letter-spacing: 2px;
+        }
+        .match-grid-day {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
         @media (max-width: 600px) {
             .match-grid { grid-template-columns: 1fr; }
+            .match-grid-day { grid-template-columns: 1fr; }
         }
         .match-block {
             background: linear-gradient(135deg, rgba(10,20,40,0.95) 0%, rgba(5,12,25,0.95) 100%);
@@ -1185,7 +1204,7 @@
         <div class="homepage-section" id="homepageSection">
             <!-- Day 1 Matches -->
             <div class="ranking-section">
-                <div class="match-day-header">⚔️ 比赛对阵 - Day 1 (9月1日)</div>
+                <div class="match-day-header">⚔️ 比赛对阵</div>
                 <div class="match-grid" id="matchGrid"></div>
             </div><!-- Scoreboard -->
             <div class="ranking-section">
@@ -1543,21 +1562,40 @@
 
         // ===== Tournament Data =====
         // Player names hardcoded in JS - no Chinese encoding issues
+        // Structure: { day: { group: { left: [...], right: [...] } } }
         const matchGroups = {
-            A: {
-                left: ['胜', '静雅', '洋芋', '墩墩猪'],
-                right: ['掰头王', '腿神', '男孩', '鸡脚']
+            1: {
+                A: {
+                    left: ['胜', '静雅', '洋芋', '墩墩猪'],
+                    right: ['掰头王', '腿神', '男孩', '鸡脚']
+                },
+                B: {
+                    left: ['欧欧', '做菜', '玉树', '痞子猪'],
+                    right: ['素白', '天仙', '炼金', '可乐']
+                }
             },
-            B: {
-                left: ['欧欧', '做菜', '玉树', '痞子猪'],
-                right: ['素白', '天仙', '炼金', '可乐']
+            2: {
+                A: {
+                    left: ['掰头王', '腿神', '洋芋', '男孩'],
+                    right: ['飞影', '咔咔', '静雅', '鸡脚']
+                },
+                B: {
+                    left: ['炼金', '做菜', '天仙', '欧欧'],
+                    right: ['可乐', '玉树', '痞子猪', '大鱼']
+                }
             }
         };
 
-        // Default match results (Day 1)
+        // Default match results per day
         const defaultMatchResults = {
-            A: { winner: 'right', scoreLeft: 0, scoreRight: 0 },
-            B: { winner: 'left', scoreLeft: 0, scoreRight: 0 }
+            1: {
+                A: { winner: 'right', scoreLeft: 0, scoreRight: 0 },
+                B: { winner: 'left', scoreLeft: 0, scoreRight: 0 }
+            },
+            2: {
+                A: { winner: null, scoreLeft: 0, scoreRight: 0 },
+                B: { winner: null, scoreLeft: 0, scoreRight: 0 }
+            }
         };
 
         let tournamentData = {
@@ -1565,41 +1603,52 @@
             scores: {}
         };
 
-        // Calculate scores from match results
-        function calculateScores(results) {
+        // Calculate scores from all match results
+        function calculateScores(allResults) {
             const scores = {};
-            for (const [group, data] of Object.entries(results)) {
-                const groupData = matchGroups[group];
-                const winningTeam = groupData[data.winner];
-                const losingTeam = groupData[data.winner === 'left' ? 'right' : 'left'];
+            for (const [day, dayResults] of Object.entries(allResults)) {
+                for (const [group, data] of Object.entries(dayResults)) {
+                    if (!data.winner) continue; // Skip matches without results
+                    const groupData = matchGroups[day][group];
+                    const winningTeam = groupData[data.winner];
+                    const losingTeam = groupData[data.winner === 'left' ? 'right' : 'left'];
 
-                winningTeam.forEach(player => {
-                    scores[player] = { team: group + '-' + data.winner, wins: 1, losses: 0, score: 3 };
-                });
-                losingTeam.forEach(player => {
-                    scores[player] = { team: group + '-' + (data.winner === 'left' ? 'right' : 'left'), wins: 0, losses: 1, score: 1 };
-                });
+                    winningTeam.forEach(player => {
+                        if (!scores[player]) scores[player] = { wins: 0, losses: 0, score: 0 };
+                        scores[player].wins++;
+                        scores[player].score += 3;
+                    });
+                    losingTeam.forEach(player => {
+                        if (!scores[player]) scores[player] = { wins: 0, losses: 0, score: 0 };
+                        scores[player].losses++;
+                        scores[player].score += 1;
+                    });
+                }
             }
             return scores;
         }
 
-        // Initialize with default results
-        function initTournamentData(results) {
+        // Initialize with default results for all days
+        function initTournamentData(allResults) {
             tournamentData.matches = [];
-            for (const [group, data] of Object.entries(results)) {
-                tournamentData.matches.push({
-                    group: group,
-                    day: 1,
-                    date: '2026-09-01',
-                    leftTeam: matchGroups[group].left,
-                    rightTeam: matchGroups[group].right,
-                    winner: data.winner,
-                    scoreLeft: data.scoreLeft || 0,
-                    scoreRight: data.scoreRight || 0,
-                    timestamp: '2026-09-01T12:00:00.000Z'
-                });
+            for (const [day, dayResults] of Object.entries(allResults)) {
+                for (const [group, data] of Object.entries(dayResults)) {
+                    const dayNum = parseInt(day);
+                    const dateStr = dayNum === 1 ? '2026-09-01' : (dayNum === 2 ? '2026-09-02' : `2026-09-0${dayNum}`);
+                    tournamentData.matches.push({
+                        group: group,
+                        day: dayNum,
+                        date: dateStr,
+                        leftTeam: matchGroups[dayNum][group].left,
+                        rightTeam: matchGroups[dayNum][group].right,
+                        winner: data.winner,
+                        scoreLeft: data.scoreLeft || 0,
+                        scoreRight: data.scoreRight || 0,
+                        timestamp: `${dateStr}T12:00:00.000Z`
+                    });
+                }
             }
-            tournamentData.scores = calculateScores(results);
+            tournamentData.scores = calculateScores(allResults);
         }
 
         async function loadTournamentData() {
@@ -1622,7 +1671,10 @@
         async function saveTournamentData() {
             const results = {};
             tournamentData.matches.forEach(m => {
-                results[m.group] = { winner: m.winner, scoreLeft: m.scoreLeft || 0, scoreRight: m.scoreRight || 0 };
+                const day = m.day;
+                const group = m.group;
+                if (!results[day]) results[day] = {};
+                results[day][group] = { winner: m.winner, scoreLeft: m.scoreLeft || 0, scoreRight: m.scoreRight || 0 };
             });
             try {
                 const resultsStr = JSON.stringify(results);
@@ -1637,17 +1689,31 @@
             }
         }
 
-        // Render match blocks in grid
+        // Render match blocks in grid - grouped by day
         function renderMatchGrid() {
             const grid = document.getElementById('matchGrid');
             if (!grid) return;
-            grid.innerHTML = tournamentData.matches.map(m => {
-                const winnerClass = m.winner === 'left' ? 'winner-left' : (m.winner === 'right' ? 'winner-right' : '');
-                const leftWinClass = m.winner === 'left' ? 'winner' : '';
-                const rightWinClass = m.winner === 'right' ? 'winner' : '';
-                return `
-                <div class="match-block ${winnerClass}" id="matchBlock${m.group}">
-                    <div class="match-block-label">${m.group} 组</div>
+
+            // Group matches by day
+            const dayGroups = {};
+            tournamentData.matches.forEach(m => {
+                if (!dayGroups[m.day]) dayGroups[m.day] = [];
+                dayGroups[m.day].push(m);
+            });
+
+            let html = '';
+            for (const [day, matches] of Object.entries(dayGroups)) {
+                html += `<div class="match-day-section">`;
+                html += `<div class="match-day-subheader">Day ${day} (${matches[0].date})</div>`;
+                html += `<div class="match-grid-day">`;
+
+                matches.forEach(m => {
+                    const winnerClass = m.winner === 'left' ? 'winner-left' : (m.winner === 'right' ? 'winner-right' : '');
+                    const leftWinClass = m.winner === 'left' ? 'winner' : '';
+                    const rightWinClass = m.winner === 'right' ? 'winner' : '';
+                    html += `
+                    <div class="match-block ${winnerClass}" id="matchBlock${m.day}${m.group}">
+                        <div class="match-block-label">${m.group} 组</div>
                     <div class="match-block-teams">
                         <div class="match-block-team ${leftWinClass}">
                             <div class="team-players-row">
@@ -1662,39 +1728,44 @@
                         </div>
                     </div>
                     <div class="match-block-score">
-                        <input type="number" class="score-input" id="scoreLeft${m.group}" value="${m.scoreLeft || 0}" min="0" max="9" ${isAdmin ? '' : 'readonly'} />
+                        <input type="number" class="score-input" id="scoreLeft${m.day}${m.group}" value="${m.scoreLeft || 0}" min="0" max="9" ${isAdmin ? '' : 'readonly'} />
                         <span class="score-separator">:</span>
-                        <input type="number" class="score-input" id="scoreRight${m.group}" value="${m.scoreRight || 0}" min="0" max="9" ${isAdmin ? '' : 'readonly'} />
+                        <input type="number" class="score-input" id="scoreRight${m.day}${m.group}" value="${m.scoreRight || 0}" min="0" max="9" ${isAdmin ? '' : 'readonly'} />
                     </div>
                     <div class="match-block-actions">
-                        <button class="btn-match-result btn-win-left" onclick="recordMatchResult('${m.group}','left')">左队胜</button>
-                        <button class="btn-match-result btn-win-right" onclick="recordMatchResult('${m.group}','right')">右队胜</button>
+                        <button class="btn-match-result btn-win-left" onclick="recordMatchResult(${m.day},'${m.group}','left')">左队胜</button>
+                        <button class="btn-match-result btn-win-right" onclick="recordMatchResult(${m.day},'${m.group}','right')">右队胜</button>
                     </div>
-                    <div class="match-block-result" id="matchResult${m.group}">${m.winner ? (m.winner === 'left' ? '✅ 左队获胜' : '✅ 右队获胜') : ''}</div>
+                    <div class="match-block-result" id="matchResult${m.day}${m.group}">${m.winner ? (m.winner === 'left' ? '✅ 左队获胜' : '✅ 右队获胜') : ''}</div>
                 </div>`;
-            }).join('');
+                });
+
+                html += `</div></div>`;
+            }
+
+            grid.innerHTML = html;
         }
 
-        function recordMatchResult(group, winningSide) {
+        function recordMatchResult(day, group, winningSide) {
             if (!isAdmin) {
                 showToast('⚠️ 只有管理员可以记录比赛结果');
                 return;
             }
 
-            const groupData = matchGroups[group];
+            const groupData = matchGroups[day][group];
             const winningTeam = groupData[winningSide];
             const losingTeam = groupData[winningSide === 'left' ? 'right' : 'left'];
 
             // Read scores from input fields
-            const scoreLeftEl = document.getElementById('scoreLeft' + group);
-            const scoreRightEl = document.getElementById('scoreRight' + group);
+            const scoreLeftEl = document.getElementById('scoreLeft' + day + group);
+            const scoreRightEl = document.getElementById('scoreRight' + day + group);
             const scoreLeft = scoreLeftEl ? parseInt(scoreLeftEl.value) || 0 : 0;
             const scoreRight = scoreRightEl ? parseInt(scoreRightEl.value) || 0 : 0;
 
             const match = {
                 group: group,
-                day: 1,
-                date: '2026-09-01',
+                day: day,
+                date: day === 1 ? '2026-09-01' : (day === 2 ? '2026-09-02' : `2026-09-0${day}`),
                 leftTeam: groupData.left,
                 rightTeam: groupData.right,
                 winner: winningSide,
@@ -1703,16 +1774,18 @@
                 timestamp: new Date().toISOString()
             };
 
-            // Recalculate all scores from scratch
+            // Recalculate all scores from scratch - rebuild results structure
             const results = {};
             tournamentData.matches.forEach(m => {
-                if (m.group === group) return; // skip old result for this group
-                results[m.group] = { winner: m.winner, scoreLeft: m.scoreLeft || 0, scoreRight: m.scoreRight || 0 };
+                if (m.day === day && m.group === group) return; // skip old result for this day+group
+                if (!results[m.day]) results[m.day] = {};
+                results[m.day][m.group] = { winner: m.winner, scoreLeft: m.scoreLeft || 0, scoreRight: m.scoreRight || 0 };
             });
-            results[group] = { winner: winningSide, scoreLeft: scoreLeft, scoreRight: scoreRight };
+            if (!results[day]) results[day] = {};
+            results[day][group] = { winner: winningSide, scoreLeft: scoreLeft, scoreRight: scoreRight };
 
             // Update matches array
-            const existingMatchIdx = tournamentData.matches.findIndex(m => m.group === group && m.day === 1);
+            const existingMatchIdx = tournamentData.matches.findIndex(m => m.group === group && m.day === day);
             if (existingMatchIdx >= 0) {
                 tournamentData.matches[existingMatchIdx] = match;
             } else {
@@ -1723,7 +1796,8 @@
             saveTournamentData();
             renderMatchGrid();
             renderScoreTable();
-            showToast(`✅ ${group}组 ${winningSide === 'left' ? '左队' : '右队'} 获胜，积分已更新`);
+            renderTournamentMatchResults();
+            showToast(`✅ Day${day} ${group}组 ${winningSide === 'left' ? '左队' : '右队'} 获胜，积分已更新`);
         }
 
         function renderScoreTable() {
