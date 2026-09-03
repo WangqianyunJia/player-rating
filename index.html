@@ -1809,12 +1809,14 @@
                 return;
             }
 
-            // Get match dates from tournamentData.matches
-            const matchDates = {};
+            // Get all match dates
+            const allDates = [];
             tournamentData.matches.forEach(m => {
-                if (!matchDates[m.group]) matchDates[m.group] = [];
-                matchDates[m.group].push(m.date || '2026-09-01');
+                if (m.date && !allDates.includes(m.date)) {
+                    allDates.push(m.date);
+                }
             });
+            const dateStr = allDates.length > 0 ? allDates.sort().join(', ') : '-';
 
             const sortedPlayers = Object.entries(scores)
                 .sort((a, b) => b[1].score - a[1].score);
@@ -1822,11 +1824,6 @@
             tbody.innerHTML = sortedPlayers.map(([player, data]) => {
                 const totalGames = data.wins + data.losses;
                 const winRate = totalGames > 0 ? ((data.wins / totalGames) * 100).toFixed(1) + '%' : '0%';
-                // Get dates for this player's team
-                const teamKey = data.team;
-                const group = teamKey.split('-')[0];
-                const dates = matchDates[group] || [];
-                const dateStr = dates.length > 0 ? dates.join(', ') : '-';
                 return `
                 <tr>
                     <td>${player}</td>
